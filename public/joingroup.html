@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join Group</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        #joinGroupContainer {
+            text-align: center;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="joinGroupContainer">
+        <h2>Join Group</h2>
+
+        <form id="joinGroupForm" action="#" method="post">
+            <!-- Replace "#" with the actual URL for form submission -->
+            <label for="groupId">Group ID:</label>
+            <input type="text" id="groupId" name="groupId" required>
+
+            <label for="location">Location:</label>
+            <input type="text" id="location" name="location" readonly required>
+
+            <button type="submit">Join Group</button>
+        </form>
+    </div>
+
+    <script>
+        function fetchLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    var latitude = position.coords.latitude;
+                    var longitude = position.coords.longitude;
+                    var locationInput = document.getElementById("location");
+                    locationInput.value = "Latitude: " + latitude + ", Longitude: " + longitude;
+                }, function(error) {
+                    console.error("Error getting location:", error.message);
+                });
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+
+        // Call fetchLocation when the page loads
+        window.addEventListener("load", fetchLocation);
+
+        document.getElementById("joinGroupForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            var groupId = document.getElementById("groupId").value;
+            var location = document.getElementById("location").value;
+            alert("Joining Group ID: " + groupId + "\nLocation: " + location);
+            // Add your logic to process the group joining action or submit the form to the server
+        });
+    </script>
+
+</body>
+</html>

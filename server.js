@@ -134,6 +134,10 @@ app.get("/home.html", (req, res) => {
 });
 
 
+app.get("/joingroup", (req, res) => {
+  res.sendFile("joingroup.html", { root: "public" });
+});
+
 app.get("/loginwithqr", (req, res) => {
   res.sendFile("loginwithqr.html", { root: "public" });
 });
