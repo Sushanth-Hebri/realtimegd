@@ -209,18 +209,6 @@ async function generateQRCodeImage(data) {
 
 
 
-app.get("/genres/:genre", (req, res) => {
-  const genre = req.params.genre;
-  const filePath = path.join(__dirname, "public", "genre", `${genre}.html`);
-
-  // Check if the genre file exists, and send it if it does
-  res.sendFile(filePath, (err) => {
-    if (err) {
-      // If the file doesn't exist, you can handle it as per your requirements
-      res.status(404).send("Genre not found");
-    }
-  });
-});
 
 app.get("/profile", (req, res) => {
   // Retrieve the email from the session

@@ -82,6 +82,9 @@
             <label for="communityGuidelines">Community Guidelines:</label>
             <textarea id="communityGuidelines" name="communityGuidelines" rows="4" required></textarea>
 
+            <!-- Hidden location field -->
+            <input type="hidden" id="location" name="location">
+
             <button type="submit">Create Group</button>
         </form>
     </div>
@@ -102,6 +105,14 @@
             const randomGroupId = generateRandomCode(8);
             document.getElementById("groupId").value = randomGroupId;
             document.getElementById("groupIdContainer").innerText = "Group ID: " + randomGroupId;
+
+            // Fetch location automatically
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const location = position.coords.latitude + ', ' + position.coords.longitude;
+                    document.getElementById("location").value = location;
+                });
+            }
         });
 
         document.getElementById("groupForm").addEventListener("submit", function(event) {

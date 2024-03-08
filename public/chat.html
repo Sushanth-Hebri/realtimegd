@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Group Chat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #chatContainer {
+            width: 80%;
+            max-width: 800px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            margin-top: 20px;
+        }
+
+        #messageContainer {
+            flex-grow: 1;
+            padding: 20px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        #onlineUsers {
+            width: 20%;
+            max-width: 200px;
+            background-color: #989595;
+            text-align: center;
+            overflow-y: auto;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            position: relative;
+            overflow: hidden;
+            background-color: #f2f2f2;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .message .name {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .message .timestamp {
+            font-size: 12px;
+            color: #888;
+            margin-left: 10px;
+        }
+
+        .message .content {
+            margin-top: 5px;
+            color: #333;
+        }
+
+        .message .profile-pic {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 10px;
+        }
+
+        .message .reply-icon {
+            position: absolute;
+            top: 50%;
+            right: 0;
+            transform: translateY(-50%);
+            color: #888;
+            cursor: pointer;
+        }
+
+        .reply-container {
+            background-color: #f9f9f9;
+            padding: 5px;
+            margin-top: 5px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .reply-container .replied-by {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .bottom-typer {
+            width: 100%;
+            position: sticky;
+            bottom: 0;
+            background-color: #989595;
+            padding: 10px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .bottom-typer input {
+            width: 80%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        .bottom-typer button {
+            width: 18%;
+            padding: 10px;
+            border-radius: 7px;
+            background-color: aqua;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="chatContainer">
+        <div id="messageContainer"></div>
+        <div id="onlineUsers"></div>
+    </div>
+
+    <div class="bottom-typer">
+        <input type="text" id="messageInput" placeholder="Type your message...">
+        <button id="sendButton">Send</button>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        // Firebase configuration
+        var firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        var db = firebase.database();
+        var socket = io(); // Assuming you have a Socket.io server running
+
+        var nameInput = prompt("Enter your name:");
+        var profilePicInput = prompt("Enter your profile picture URL:");
+
+        // Send user information to the server
+        socket.emit('user_info', { name: nameInput, profilePic: profilePicInput });
+
+        var messageInput = document.getElementById('messageInput');
+        var sendButton = document.getElementById('sendButton');
+        var messageContainer = document.getElementById('messageContainer');
+
+        sendButton.addEventListener('click', function () {
+            var message = messageInput.value.trim();
+            if (message !== '') {
+                sendMessage(message);
+                messageInput.value = '';
+            }
+        });
+
+        function sendMessage(message) {
+            var userName = nameInput;
+            var profilePic = profilePicInput;
+            var timestamp = Date.now();
+
+            var messageData = {
+                name: userName,
+                profilePic: profilePic,
+                text: message,
+                timestamp: timestamp
+            };
+
+            db.ref('messages').push(messageData);
+            socket.emit('new_message', messageData);
+        }
+
+        function displayMessage(snapshot) {
+            var data = snapshot.val();
+            var name = data.name;
+            var profilePic = data.profilePic;
+            var message = data.text;
+            var timestamp = formatTimestamp(data.timestamp);
+
+            var messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            messageElement.innerHTML = '<img src="' + profilePic + '" class="profile-pic">' +
+                '<span class="name">' + name + ':</span> <span class="content">' + message + '</span>' +
+                '<span class="timestamp">' + timestamp + '</span><i class="material-icons reply-icon">reply</i>';
+
+            messageContainer.appendChild(messageElement);
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+            setTimeout(function () {
+                messageElement.classList.add('show');
+            }, 10);
+
+            var replyIcon = messageElement.querySelector('.reply-icon');
+            replyIcon.addEventListener('click', function () {
+                messageInput.value = '@' + name + ' ';
+                messageInput.focus();
+            });
+        }
+
+        function formatTimestamp(timestamp) {
+            var date = new Date(timestamp);
+            var hours = date.getHours();
+            var minutes = date.getMinutes();
+            hours = (hours < 10) ? '0' + hours : hours;
+            minutes = (minutes < 10) ? '0' + minutes : minutes;
+            return hours + ':' + minutes;
+        }
+
+        db.ref('messages').orderByChild('timestamp').on('child_added', function (snapshot) {
+            displayMessage(snapshot);
+        });
+
+        // Listen for new messages from the server
+        socket.on('new_message', function (data) {
+            displayMessage({ val: data });
+        });
+    </script>
+</body>
+</html>
