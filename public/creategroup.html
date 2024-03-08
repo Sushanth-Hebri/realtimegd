@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Group</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #createGroupForm {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 400px;
+            max-width: 100%;
+            text-align: center;
+        }
+
+        #groupIdContainer {
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        label {
+            display: block;
+            text-align: left;
+            margin: 10px 0 5px;
+        }
+
+        input {
+            width: calc(100% - 12px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="createGroupForm">
+        <h2>Create Group</h2>
+
+        <div id="groupIdContainer"></div>
+
+        <form action="#" method="post" id="groupForm">
+            <!-- Replace "#" with the actual URL for form submission -->
+
+            <label for="groupName">Group Name:</label>
+            <input type="text" id="groupName" name="groupName" required>
+
+            <label for="creatorName">Creator Name:</label>
+            <input type="text" id="creatorName" name="creatorName" required>
+
+            <label for="groupId">Group ID:</label>
+            <input type="text" id="groupId" name="groupId" value="" readonly>
+
+            <label for="communityGuidelines">Community Guidelines:</label>
+            <textarea id="communityGuidelines" name="communityGuidelines" rows="4" required></textarea>
+
+            <button type="submit">Create Group</button>
+        </form>
+    </div>
+
+    <script>
+        function generateRandomCode(length) {
+            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let randomCode = '';
+            for (let i = 0; i < length; i++) {
+                const randomIndex = Math.floor(Math.random() * characters.length);
+                randomCode += characters.charAt(randomIndex);
+            }
+            return randomCode;
+        }
+
+        // Generate and display the group ID when the page loads
+        document.addEventListener("DOMContentLoaded", function() {
+            const randomGroupId = generateRandomCode(8);
+            document.getElementById("groupId").value = randomGroupId;
+            document.getElementById("groupIdContainer").innerText = "Group ID: " + randomGroupId;
+        });
+
+        document.getElementById("groupForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+
+            // Add your logic to handle the form submission (e.g., send data to server)
+            // For now, you may want to update the page or redirect the user
+
+            // For example, redirecting to a confirmation page
+            // window.location.href = "confirmation.html";
+        });
+    </script>
+
+</body>
+</html>
