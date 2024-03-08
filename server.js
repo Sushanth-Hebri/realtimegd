@@ -6,6 +6,7 @@ const session = require("express-session");
 const path = require("path");
 const fs = require("fs");
 const ejs = require("ejs");
+const qrcode = require('qrcode');
 require('dotenv').config();
 
 
@@ -132,6 +133,18 @@ app.get("/home.html", (req, res) => {
   });
 });
 
+
+app.get("/loginwithqr", (req, res) => {
+  res.sendFile("loginwithqr.html", { root: "public" });
+});
+
+app.get("/home", (req, res) => {
+  res.sendFile("home.html", { root: "public" });
+});
+
+app.get("/landing", (req, res) => {
+  res.sendFile("landing.html", { root: "public" });
+});
 app.get("/signin", (req, res) => {
   res.sendFile("signin.html", { root: "public" });
 });
@@ -147,6 +160,46 @@ app.get("/genres", (req, res) => {
 // app.get("/profile", (req, res) => {
 //   res.sendFile("profile.html", { root: "public" });
 // });
+
+// Endpoint to generate QR code on the server side
+app.get('/generateQR', async (req, res) => {
+  const qrCodeData = generateRandomString();
+  const qrCodeImage = await generateQRCodeImage(qrCodeData);
+
+  res.json({ qrCodeData, qrCodeImage });
+});
+
+
+
+
+function generateRandomString() {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  const length = 10; // Change the length as needed
+
+  for (let i = 0; i < length; i++) {
+      result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+
+  return result;
+}
+
+async function generateQRCodeImage(data) {
+  try {
+      const qrCodeImage = await qrcode.toDataURL(data);
+      return qrCodeImage;
+  } catch (error) {
+      console.error('Error generating QR code:', error);
+      throw error;
+  }
+}
+
+
+
+
+
+
+
 
 app.get("/genres/:genre", (req, res) => {
   const genre = req.params.genre;
