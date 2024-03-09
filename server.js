@@ -37,7 +37,7 @@ app.use(bodyParser.json())
 const userSchema = new mongoose.Schema({
   username: String,
   dob: Date,
-  email: String,
+  email: { type: String, unique: true }, // Make email field unique
   password: String,
   profile: {
     data: Buffer,
@@ -59,41 +59,56 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// ...
 
 app.post('/signup', upload.single('profileImage'), async (req, res) => {
   try {
+    // Validate form fields
+    if (!req.body.username || !req.body.dob || !req.body.email || !req.body.password) {
+      return res.status(400).send('<script>alert("All form fields are required."); window.location.href="/signup";</script>');
+    }
+
+    // Check if email already exists
+    const existingUser = await User.findOne({ email: req.body.email });
+    if (existingUser) {
+      return res.status(400).send('<script>alert("Email already exists. Please choose another email."); window.location.href="/signup";</script>');
+    }
+
+    // Check if file was uploaded
+    if (!req.file) {
+      return res.status(400).send('<script>alert("Please upload a profile picture."); window.location.href="/signup";</script>');
+    }
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(req.body.password, 10);
+
     // Process form data and uploaded image
     const obj = {
       username: req.body.username,
       dob: req.body.dob,
       email: req.body.email,
-      password: req.body.password,
+      password: hashedPassword, // Store the hashed password
       profile: {
-        data: fs.readFileSync(path.join(__dirname, '/uploads/', req.file.filename)),
+        data: fs.readFileSync(path.join(__dirname, 'uploads', req.file.filename)),
         contentType: req.file.mimetype,
       },
-      webqrdata: generateRandomString(), // Use your method to generate QR data
+      webqrdata: generateRandomString(),
       appqrdata: generateRandomString(),
     };
 
     // Save data to MongoDB
     await User.create(obj);
 
-
-
     // Remove the file from the disk
     fs.unlinkSync(path.join(__dirname, 'uploads', req.file.filename));
 
     // Redirect or send a success response
-    res.redirect('/success');
+    res.send('<script>window.location.href="/signin";</script>');
   } catch (error) {
     // Handle errors
     console.error(error);
-    res.status(500).send('Internal Server Error');
+    res.status(500).send('<script>alert("Internal Server Error"); window.location.href="/signup";</script>');
   }
 });
-
 
 
   const User = mongoose.model('User', userSchema);
@@ -335,52 +350,42 @@ app.get("/signout", (req, res) => {
   });
 });
 
-// // Handle signup form submission
-// app.post("/signup", async (req, res) => {
-//   const { email, password } = req.body;
-
-//   try {
-//     // Hash the password before saving it
-//     const hashedPassword = await bcrypt.hash(password, 10);
-
-//     // Create a new user
-//     const newUser = new User({
-//       email,
-//       password: hashedPassword,
-//     });
-
-//     // Save the user to the database
-//     await newUser.save();
-
-//     // Redirect to home.html after successful signup
-//     res.redirect("/signin");
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).send("Error registering user");
-//   }
-// });
 
 // Handle signin form submission
 app.post("/signin", async (req, res) => {
-  const { email, password } = req.body;
-
   try {
+    const { email, password } = req.body;
+
+    // Validate form fields
+    if (!email || !password) {
+      return res.status(400).send("Email and password are required.");
+    }
+
     // Find the user in the database
     const user = await User.findOne({ email });
 
-    // Check if the user exists and the password is correct
-    if (user && (await bcrypt.compare(password, user.password))) {
-      req.session.email = email;
-      // Redirect to home.html after successful signin
-      res.redirect("/home.html");
-    } else {
-      res.status(401).send("Invalid email or password");
+    // Check if the user exists
+    if (!user) {
+      return res.status(401).send("Invalid email or password");
     }
+
+    // Check if the password is correct
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      return res.status(401).send("Invalid email or password");
+    }
+
+    // Set the user's email in the session
+    req.session.email = email;
+
+    // Redirect to home.html after successful signin
+    res.redirect("/home.html");
   } catch (error) {
     console.error(error);
     res.status(500).send("Error during signin");
   }
 });
+
 
 // Example to check if the user is authenticated
 app.get("/checkAuth", (req, res) => {
@@ -484,28 +489,28 @@ app.get('/api/user/email', (req, res) => {
 
 
 
-// Handle signup form submission
-app.post("/signup", async (req, res) => {
-  const { email, password } = req.body;
+// // Handle signup form submission
+// app.post("/signup", async (req, res) => {
+//   const { email, password } = req.body;
 
-  try {
+//   try {
  
-    const hashedPassword = await bcrypt.hash(password, 10);
+//     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create a new user with email and hashed password
-    const newUser = new User({
-      email,
-      password: hashedPassword,
-    });
+//     // Create a new user with email and hashed password
+//     const newUser = new User({
+//       email,
+//       password: hashedPassword,
+//     });
 
-    // Save the user to the database
-    await newUser.save();
-    res.redirect("/signin"); 
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("Error registering user");
-  }
-});
+//     // Save the user to the database
+//     await newUser.save();
+//     res.redirect("/signin"); 
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).send("Error registering user");
+//   }
+// });
 
 
 
