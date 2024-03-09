@@ -1,27 +1,24 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const multer = require('multer');
+const multer = require("multer");
 const bodyParser = require("body-parser");
 const bcrypt = require("bcryptjs");
 const session = require("express-session");
 const path = require("path");
 const fs = require("fs");
 const ejs = require("ejs");
-const qrcode = require('qrcode');
-require('dotenv').config();
-
+const qrcode = require("qrcode");
+require("dotenv").config();
+const admin = require('firebase-admin');
 
 const app = express();
 const port = 3000;
 
 mongoose
-  .connect(
-    process.env.MONGO,
-    {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    }
-  )
+  .connect(process.env.MONGO, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then(() => {
     console.log("Connected to MongoDB");
   })
@@ -29,9 +26,42 @@ mongoose
     console.error("Error connecting to MongoDB:", error);
   });
 
-  app.use(bodyParser.urlencoded({ extended: false }))
-app.use(bodyParser.json())
 
+
+  var firebaseConfig = {
+    // Your Firebase project's configuration
+    apiKey: "AIzaSyCPRBX23loTMM8zRtUI4_TiCZ6yhVTvkgc",
+authDomain: "realtime-group-discussion.firebaseapp.com",
+databaseURL: "https://realtime-group-discussion-default-rtdb.firebaseio.com",
+projectId: "realtime-group-discussion",
+storageBucket: "realtime-group-discussion.appspot.com",
+messagingSenderId: "297395929587",
+appId: "1:297395929587:web:21beac58c3a94e46505286"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+
+  var db = firebase.database();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 
 // Define a Mongoose schema for the user
 const userSchema = new mongoose.Schema({
@@ -47,35 +77,73 @@ const userSchema = new mongoose.Schema({
   appqrdata: String, // Add the appqrdata field
 });
 
+// Create a Mongoose schema for group details on mongodb
+const groupSchema = new mongoose.Schema({
+  groupId: {
+    type: String,
+    unique: true, // Ensures groupId is unique
+    required: true
+  },
+  groupName: String,
+  creatorName: String,
+  communityGuidelines: String,
+  location: String,
+});
+
+const Group = mongoose.model('Group', groupSchema);
+
+
+
+
+
+
+
+
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads');
+    cb(null, "uploads");
   },
   filename: (req, file, cb) => {
-    cb(null, file.fieldname + '-' + Date.now());
+    cb(null, file.fieldname + "-" + Date.now());
   },
 });
 
 const upload = multer({ storage });
 
-
-app.post('/signup', upload.single('profileImage'), async (req, res) => {
+app.post("/signup", upload.single("profileImage"), async (req, res) => {
   try {
     // Validate form fields
-    if (!req.body.username || !req.body.dob || !req.body.email || !req.body.password) {
-      return res.status(400).send('<script>alert("All form fields are required."); window.location.href="/signup";</script>');
+    if (
+      !req.body.username ||
+      !req.body.dob ||
+      !req.body.email ||
+      !req.body.password
+    ) {
+      return res
+        .status(400)
+        .send(
+          '<script>alert("All form fields are required."); window.location.href="/signup";</script>'
+        );
     }
 
     // Check if email already exists
     const existingUser = await User.findOne({ email: req.body.email });
     if (existingUser) {
-      return res.status(400).send('<script>alert("Email already exists. Please choose another email."); window.location.href="/signup";</script>');
+      return res
+        .status(400)
+        .send(
+          '<script>alert("Email already exists. Please choose another email."); window.location.href="/signup";</script>'
+        );
     }
 
     // Check if file was uploaded
     if (!req.file) {
-      return res.status(400).send('<script>alert("Please upload a profile picture."); window.location.href="/signup";</script>');
+      return res
+        .status(400)
+        .send(
+          '<script>alert("Please upload a profile picture."); window.location.href="/signup";</script>'
+        );
     }
 
     // Hash the password
@@ -88,7 +156,9 @@ app.post('/signup', upload.single('profileImage'), async (req, res) => {
       email: req.body.email,
       password: hashedPassword, // Store the hashed password
       profile: {
-        data: fs.readFileSync(path.join(__dirname, 'uploads', req.file.filename)),
+        data: fs.readFileSync(
+          path.join(__dirname, "uploads", req.file.filename)
+        ),
         contentType: req.file.mimetype,
       },
       webqrdata: generateRandomString(),
@@ -99,35 +169,58 @@ app.post('/signup', upload.single('profileImage'), async (req, res) => {
     await User.create(obj);
 
     // Remove the file from the disk
-    fs.unlinkSync(path.join(__dirname, 'uploads', req.file.filename));
+    fs.unlinkSync(path.join(__dirname, "uploads", req.file.filename));
 
     // Redirect or send a success response
     res.send('<script>window.location.href="/signin";</script>');
   } catch (error) {
     // Handle errors
     console.error(error);
-    res.status(500).send('<script>alert("Internal Server Error"); window.location.href="/signup";</script>');
+    res
+      .status(500)
+      .send(
+        '<script>alert("Internal Server Error"); window.location.href="/signup";</script>'
+      );
   }
 });
 
+// Handle signin form submission
+app.post("/signin", async (req, res) => {
+  try {
+    const { email, password } = req.body;
 
-  const User = mongoose.model('User', userSchema);
-  module.exports = User;
+    // Validate form fields
+    if (!email || !password) {
+      return res.status(400).send("Email and password are required.");
+    }
 
+    // Find the user in the database
+    const user = await User.findOne({ email });
 
+    // Check if the user exists
+    if (!user) {
+      return res.status(401).send("Invalid email or password");
+    }
 
+    // Check if the password is correct
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      return res.status(401).send("Invalid email or password");
+    }
 
+    // Set the user's email in the session
+    req.session.email = email;
 
+    // Redirect to home.html after successful signin
+    res.redirect("/home.html");
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error during signin");
+  }
+});
 
-
-
-
-
-
-
-
-
-
+const User = mongoose.model("User", userSchema);
+module.exports = User;
 
 app.use(bodyParser.json());
 app.set("view engine", "ejs");
@@ -140,8 +233,6 @@ app.use(
     cookie: { maxAge: 60 * 60 * 1000 },
   })
 );
-
-
 
 // Serve static files from the 'public' folder
 app.use(express.static("public"));
@@ -189,7 +280,6 @@ app.get("/home.html", (req, res) => {
   });
 });
 
-
 app.get("/creategroup", (req, res) => {
   res.sendFile("creategroup.html", { root: "public" });
 });
@@ -217,30 +307,26 @@ app.get("/about", (req, res) => {
   res.sendFile("about.html", { root: "public" });
 });
 
-
-
 // app.get("/profile", (req, res) => {
 //   res.sendFile("profile.html", { root: "public" });
 // });
 
 // Endpoint to generate QR code on the server side
-app.get('/generateQR', async (req, res) => {
+app.get("/generateQR", async (req, res) => {
   const qrCodeData = generateRandomString();
   const qrCodeImage = await generateQRCodeImage(qrCodeData);
 
   res.json({ qrCodeData, qrCodeImage });
 });
 
-
-
-
 function generateRandomString() {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
+  const characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
   const length = 10; // Change the length as needed
 
   for (let i = 0; i < length; i++) {
-      result += characters.charAt(Math.floor(Math.random() * characters.length));
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
   }
 
   return result;
@@ -248,39 +334,30 @@ function generateRandomString() {
 
 async function generateQRCodeImage(data) {
   try {
-      const qrCodeImage = await qrcode.toDataURL(data);
-      return qrCodeImage;
+    const qrCodeImage = await qrcode.toDataURL(data);
+    return qrCodeImage;
   } catch (error) {
-      console.error('Error generating QR code:', error);
-      throw error;
+    console.error("Error generating QR code:", error);
+    throw error;
   }
 }
 
-
-
-
 // Route to display all user details
-app.get('/userDetails', async (req, res) => {
-    try {
-        // Fetch all users from the database
-        const users = await User.find();
+app.get("/userDetails", async (req, res) => {
+  try {
+    // Fetch all users from the database
+    const users = await User.find();
 
-        // Render the userDetails.html page with user data
-        res.render('userDetails', { users });
-    } catch (error) {
-        console.error(error);
-        res.status(500).send('Internal Server Error');
-    }
+    // Render the userDetails.html page with user data
+    res.render("userDetails", { users });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Internal Server Error");
+  }
 });
 
-
-
-
-
-
-
 // ..// Route to find and serve profile picture by username
-app.get('/profilePicByUsername/:username', async (req, res) => {
+app.get("/profilePicByUsername/:username", async (req, res) => {
   try {
     const username = req.params.username;
     const user = await User.findOne({ username: username });
@@ -290,40 +367,28 @@ app.get('/profilePicByUsername/:username', async (req, res) => {
       res.contentType(user.profile.contentType);
 
       // Send the image data
-      res.end(user.profile.data, 'binary');
+      res.end(user.profile.data, "binary");
     } else {
       // If user or profile picture not found, send a default image or handle it accordingly
-      res.sendFile(path.join(__dirname, 'public', 'default-profile-pic.png'));
+      res.sendFile(path.join(__dirname, "public", "default-profile-pic.png"));
     }
   } catch (error) {
     console.error(error);
-    res.status(500).send('Internal Server Error');
+    res.status(500).send("Internal Server Error");
   }
 });
-
 
 // ..
 // Route to display all user details
-app.get('/userDetails', async (req, res) => {
+app.get("/userDetails", async (req, res) => {
   try {
     const users = await User.find();
-    res.render('userDetails', { users: users });
+    res.render("userDetails", { users: users });
   } catch (error) {
     console.error(error);
-    res.status(500).send('Internal Server Error');
+    res.status(500).send("Internal Server Error");
   }
 });
-
-
-
-
-
-
-
-
-
-
-
 
 app.get("/profile", (req, res) => {
   // Retrieve the email from the session
@@ -332,12 +397,9 @@ app.get("/profile", (req, res) => {
   // If the email is not in the session, redirect to the sign-in page
   if (!email) {
     return res.redirect("/signin");
-  }
-  else{
+  } else {
     res.sendFile("profile.html", { root: "public" });
   }
-
-  
 });
 
 app.get("/signout", (req, res) => {
@@ -349,43 +411,6 @@ app.get("/signout", (req, res) => {
     res.redirect("/signin");
   });
 });
-
-
-// Handle signin form submission
-app.post("/signin", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    // Validate form fields
-    if (!email || !password) {
-      return res.status(400).send("Email and password are required.");
-    }
-
-    // Find the user in the database
-    const user = await User.findOne({ email });
-
-    // Check if the user exists
-    if (!user) {
-      return res.status(401).send("Invalid email or password");
-    }
-
-    // Check if the password is correct
-    const passwordMatch = await bcrypt.compare(password, user.password);
-    if (!passwordMatch) {
-      return res.status(401).send("Invalid email or password");
-    }
-
-    // Set the user's email in the session
-    req.session.email = email;
-
-    // Redirect to home.html after successful signin
-    res.redirect("/home.html");
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("Error during signin");
-  }
-});
-
 
 // Example to check if the user is authenticated
 app.get("/checkAuth", (req, res) => {
@@ -444,8 +469,7 @@ app.get("/story", async (req, res) => {
   }
 });
 
-
-app.post('/api/genre', async (req, res) => {
+app.post("/api/genre", async (req, res) => {
   console.log("im being called");
   const selectedGenre = req.body.genre;
   console.log(selectedGenre);
@@ -455,10 +479,10 @@ app.post('/api/genre', async (req, res) => {
     const stories = await Story.find({ genre: selectedGenre });
 
     // Log the fetched documents to the console
-    console.log('Fetched documents:', stories);
+    console.log("Fetched documents:", stories);
 
     // Prepare the response data
-    const updatedContent = stories.map(story => ({
+    const updatedContent = stories.map((story) => ({
       story_id: story.story_id,
       story_title: story.story_title,
       description: story.description,
@@ -470,13 +494,12 @@ app.post('/api/genre', async (req, res) => {
     // Send the response back to home.js
     res.json({ updatedContent });
   } catch (error) {
-    console.error('Error fetching stories:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error("Error fetching stories:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
-
-app.get('/api/user/email', (req, res) => {
+app.get("/api/user/email", (req, res) => {
   // Retrieve email from the session
   const userEmail = req.session.email;
 
@@ -484,17 +507,12 @@ app.get('/api/user/email', (req, res) => {
   res.json({ email: userEmail });
 });
 
-
-
-
-
-
 // // Handle signup form submission
 // app.post("/signup", async (req, res) => {
 //   const { email, password } = req.body;
 
 //   try {
- 
+
 //     const hashedPassword = await bcrypt.hash(password, 10);
 
 //     // Create a new user with email and hashed password
@@ -505,20 +523,17 @@ app.get('/api/user/email', (req, res) => {
 
 //     // Save the user to the database
 //     await newUser.save();
-//     res.redirect("/signin"); 
+//     res.redirect("/signin");
 //   } catch (error) {
 //     console.error(error);
 //     res.status(500).send("Error registering user");
 //   }
 // });
 
-
-
-
-
 // Add a new story to the database
 app.post("/add-story", async (req, res) => {
-  const { story_id, story_title, description, rating, story_script, genre } = req.body;
+  const { story_id, story_title, description, rating, story_script, genre } =
+    req.body;
 
   try {
     const newStory = new Story({
@@ -538,20 +553,46 @@ app.post("/add-story", async (req, res) => {
   }
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 module.exports = app;
+
+// Route to handle the form submission
+app.post('/creategroup', async (req, res) => {
+  console.log('called');
+  try {
+    // Process form data
+    const groupData = {
+      groupName: req.body.groupName,
+      creatorName: req.body.creatorName,
+      groupId: req.body.groupId,
+      communityGuidelines: req.body.communityGuidelines,
+      location: req.body.location,
+    };
+
+    // Save data to MongoDB
+    const createdGroup = await Group.create(groupData);
+
+    // Send a success response
+    res.send('Group created successfully!');
+  } catch (error) {
+    // Handle errors
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Start the server
 app.listen(port, () => {

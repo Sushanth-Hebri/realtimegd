@@ -67,7 +67,7 @@
 
         <div id="groupIdContainer"></div>
 
-        <form action="#" method="post" id="groupForm">
+        <form action="/creategroup" method="post" id="groupForm">
             <!-- Replace "#" with the actual URL for form submission -->
 
             <label for="groupName">Group Name:</label>
@@ -115,15 +115,7 @@
             }
         });
 
-        document.getElementById("groupForm").addEventListener("submit", function(event) {
-            event.preventDefault();
-
-            // Add your logic to handle the form submission (e.g., send data to server)
-            // For now, you may want to update the page or redirect the user
-
-            // For example, redirecting to a confirmation page
-            // window.location.href = "confirmation.html";
-        });
+       
     </script>
 
 </body>
