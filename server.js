@@ -1,5 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const multer = require('multer');
 const bodyParser = require("body-parser");
 const bcrypt = require("bcryptjs");
 const session = require("express-session");
@@ -10,11 +11,9 @@ const qrcode = require('qrcode');
 require('dotenv').config();
 
 
-
 const app = express();
 const port = 3000;
 
-// Connect to MongoDB Atlas (replace YOUR_CONNECTION_STRING with your actual connection string)
 mongoose
   .connect(
     process.env.MONGO,
@@ -30,47 +29,90 @@ mongoose
     console.error("Error connecting to MongoDB:", error);
   });
 
+  app.use(bodyParser.urlencoded({ extended: false }))
+app.use(bodyParser.json())
 
 
-  const userSchema = new mongoose.Schema({
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    phone: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    username: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    dob: {
-      type: Date,
-      required: true,
-    },
-    password: {
-      type: String,
-      required: true,
-    },
-  });
-  
+// Define a Mongoose schema for the user
+const userSchema = new mongoose.Schema({
+  username: String,
+  dob: Date,
+  email: String,
+  password: String,
+  profile: {
+    data: Buffer,
+    contentType: String,
+  },
+  webqrdata: String, // Add the webqrdata field
+  appqrdata: String, // Add the appqrdata field
+});
+
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads');
+  },
+  filename: (req, file, cb) => {
+    cb(null, file.fieldname + '-' + Date.now());
+  },
+});
+
+const upload = multer({ storage });
+
+// ...
+
+app.post('/signup', upload.single('profileImage'), async (req, res) => {
+  try {
+    // Process form data and uploaded image
+    const obj = {
+      username: req.body.username,
+      dob: req.body.dob,
+      email: req.body.email,
+      password: req.body.password,
+      profile: {
+        data: fs.readFileSync(path.join(__dirname, '/uploads/', req.file.filename)),
+        contentType: req.file.mimetype,
+      },
+      webqrdata: generateRandomString(), // Use your method to generate QR data
+      appqrdata: generateRandomString(),
+    };
+
+    // Save data to MongoDB
+    await User.create(obj);
+
+
+
+    // Remove the file from the disk
+    fs.unlinkSync(path.join(__dirname, 'uploads', req.file.filename));
+
+    // Redirect or send a success response
+    res.redirect('/success');
+  } catch (error) {
+    // Handle errors
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+
+
   const User = mongoose.model('User', userSchema);
-  
   module.exports = User;
 
-// Define mongoose schema for Story
-const storySchema = new mongoose.Schema({
-  story_id: String,
-  story_title: String,
-  description: String,
-  rating: Number,
-  story_script: String,
-  genre: String,
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 app.use(bodyParser.json());
 app.set("view engine", "ejs");
@@ -84,8 +126,7 @@ app.use(
   })
 );
 
-// Create a mongoose model for Story
-const Story = mongoose.model("Story", storySchema);
+
 
 // Serve static files from the 'public' folder
 app.use(express.static("public"));
@@ -161,9 +202,7 @@ app.get("/about", (req, res) => {
   res.sendFile("about.html", { root: "public" });
 });
 
-app.get("/genres", (req, res) => {
-  res.sendFile("genres.html", { root: "public" });
-});
+
 
 // app.get("/profile", (req, res) => {
 //   res.sendFile("profile.html", { root: "public" });
@@ -201,6 +240,67 @@ async function generateQRCodeImage(data) {
       throw error;
   }
 }
+
+
+
+
+// Route to display all user details
+app.get('/userDetails', async (req, res) => {
+    try {
+        // Fetch all users from the database
+        const users = await User.find();
+
+        // Render the userDetails.html page with user data
+        res.render('userDetails', { users });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+
+
+
+
+
+
+// ..// Route to find and serve profile picture by username
+app.get('/profilePicByUsername/:username', async (req, res) => {
+  try {
+    const username = req.params.username;
+    const user = await User.findOne({ username: username });
+
+    if (user && user.profile && user.profile.data) {
+      // Set the appropriate content type for the image
+      res.contentType(user.profile.contentType);
+
+      // Send the image data
+      res.end(user.profile.data, 'binary');
+    } else {
+      // If user or profile picture not found, send a default image or handle it accordingly
+      res.sendFile(path.join(__dirname, 'public', 'default-profile-pic.png'));
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+
+// ..
+// Route to display all user details
+app.get('/userDetails', async (req, res) => {
+  try {
+    const users = await User.find();
+    res.render('userDetails', { users: users });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+
+
 
 
 

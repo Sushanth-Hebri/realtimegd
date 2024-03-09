@@ -136,10 +136,11 @@
   <div class="body-container">
     <div class="form-container">
       <h1>Sign Up</h1>
-      <form action="/signup" method="POST">
+      <form action="/signup" method="POST" enctype="multipart/form-data">
         <div id="profile-pic-container" class="upload-btn-wrapper">
           <img src="assets/profile-user.png" alt="Profile Picture">
-          <input type="file" name="profilePic" accept="image/*" onchange="previewImage(this)">
+          <input type="file" name="profileImage" accept="image/*" onchange="previewImage(this)">
+
         </div>
         
 
