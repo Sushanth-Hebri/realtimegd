@@ -64,7 +64,10 @@
       height: 100px;
       border-radius: 50%;
       overflow: hidden;
+      border: none;
       margin: 0 auto 16px;
+      background-color: white;
+      text-align: center;
     }
 
     #profile-pic-container img {
@@ -135,10 +138,10 @@
       <h1>Sign Up</h1>
       <form action="/signup" method="POST">
         <div id="profile-pic-container" class="upload-btn-wrapper">
-          <img src="#" alt="Profile Picture">
+          <img src="assets/profile-user.png" alt="Profile Picture">
           <input type="file" name="profilePic" accept="image/*" onchange="previewImage(this)">
-          <button class="btn">Choose Image</button>
         </div>
+        
 
         <label for="username">Username:</label>
         <input type="text" id="username" name="username" required>
