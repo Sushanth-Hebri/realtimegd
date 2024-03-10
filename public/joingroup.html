@@ -47,8 +47,12 @@
     <div id="joinGroupContainer">
         <h2>Join Group</h2>
 
-        <form id="joinGroupForm" action="#" method="post">
-            <!-- Replace "#" with the actual URL for form submission -->
+        <form id="joinGroupForm" action="/joingroup" method="post">
+            <!-- Use the actual URL for form submission -->
+
+            <!-- Hidden input for email -->
+            <input type="hidden" id="email" name="email" value="">
+
             <label for="groupId">Group ID:</label>
             <input type="text" id="groupId" name="groupId" required>
 
@@ -73,18 +77,14 @@
             } else {
                 alert("Geolocation is not supported by this browser.");
             }
+
+            // Fetch email from localStorage and set it to the hidden input
+            var email = localStorage.getItem("email");
+            document.getElementById("email").value = email;
         }
 
         // Call fetchLocation when the page loads
         window.addEventListener("load", fetchLocation);
-
-        document.getElementById("joinGroupForm").addEventListener("submit", function(event) {
-            event.preventDefault();
-            var groupId = document.getElementById("groupId").value;
-            var location = document.getElementById("location").value;
-            alert("Joining Group ID: " + groupId + "\nLocation: " + location);
-            // Add your logic to process the group joining action or submit the form to the server
-        });
     </script>
 
 </body>

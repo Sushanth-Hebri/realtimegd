@@ -98,7 +98,7 @@ a:hover {
   <div class="body-container">
   <div class="form-container">
     <h1>Login</h1>
-  <form action="/signin" method="POST">
+  <form action="/signin" method="POST" id="signinForm">
    
 
     <label for="email">Email:</label>
@@ -118,5 +118,22 @@ a:hover {
   </div>
 </div>
 </div>
+
+
+<script>
+    document.getElementById("signinForm").addEventListener("submit", function(event) {
+      // Prevent the default form submission
+      event.preventDefault();
+
+      // Get the email value from the form
+      var email = document.getElementById("email").value;
+
+      // Store the email in localStorage
+      localStorage.setItem("email", email);
+
+      // Submit the form
+      this.submit();
+  });
+</script>
 </body>
 </html>

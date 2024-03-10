@@ -9,9 +9,21 @@ const fs = require("fs");
 const ejs = require("ejs");
 const qrcode = require("qrcode");
 require("dotenv").config();
+const cookieParser = require('cookie-parser');
+
+
+
+
+
+
+
+
+
+
 
 const app = express();
 const port = 3000;
+app.use(cookieParser());
 
 mongoose
   .connect(process.env.MONGO, {
@@ -162,6 +174,7 @@ app.post("/signup", upload.single("profileImage"), async (req, res) => {
 });
 
 // Handle signin form submission
+// Handle signin form submission
 app.post("/signin", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -185,8 +198,11 @@ app.post("/signin", async (req, res) => {
       return res.status(401).send("Invalid email or password");
     }
 
-    // Set the user's email in the session
-    req.session.email = email;
+    // Set the user's email in local storage
+    // Note: This is done on the client-side, and it's less secure than using sessions
+    res.cookie('email', email, { maxAge: 86400000 }); // Set maxAge to control the cookie's expiration time
+
+    console.log("User signed in. Email:", email);
 
     // Redirect to home.html after successful signin
     res.redirect("/home.html");
@@ -201,6 +217,8 @@ module.exports = User;
 
 app.use(bodyParser.json());
 app.set("view engine", "ejs");
+
+
 // Use express-session middleware
 app.use(
   session({
@@ -210,6 +228,10 @@ app.use(
     cookie: { maxAge: 60 * 60 * 1000 },
   })
 );
+
+
+
+
 
 // Serve static files from the 'public' folder
 app.use(express.static("public"));
@@ -563,7 +585,90 @@ app.post("/creategroup", async (req, res) => {
 
 
 
+
+
+
+
+app.post("/joingroup", async (req, res) => {
+  try {
+    console.log('join group called');
+    const groupId = req.body.groupId;
+    const email = req.body.email;
+
+   // Retrieve email from local storage
+    const location = req.body.location;
+
+    console.log("Received request to join group:");
+    console.log("Group ID:", groupId);
+
+    console.log("User Email:", email);
+    console.log("Location:", location);
+
+    if (groupId === "groups" && email && location) {
+      const onlineRef = db.ref('online');
+
+      // Store email and location in the "online" collection
+      await onlineRef.push({
+        email: email,
+        location: location
+      });
+
+      console.log("User joined group successfully in Firebase Realtime Database");
+
+      // Send a success response for Firebase Realtime Database
+      res.status(200).send("User joined group successfully in Firebase Realtime Database!");
+    } else {
+      console.log("Invalid request or missing required data.");
+      res.status(400).send("Invalid request or missing required data.");
+    }
+  } catch (error) {
+    // Handle errors for Firebase Realtime Database
+    console.error("Firebase Realtime Database Error:", error);
+    res.status(500).send("Internal Server Error (Firebase Realtime Database)");
+  }
+});
+
+
+
+app.get('/deleteit', (req, res) => {
+  // Access the session here
+  const email = req.session.email;
+
+  // Log the email to the console
+  console.log("Email:", email);
+
+  // Additional logic for the route can be added here if needed
+  // ...
+
+  // Send a response to the client if needed
+  res.send("Email logged in the console.");
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);
 });
+
+
+// as we click join group button in joingroup.html page, 
+// user email along with his location will be stored in the firebase realtime database in collection "online"
+// and user profile pic will be stored locally in computer and while chatting the same image will be sent along with user name and location to the firebase realtime database in collection "chat" and the same will be displayed in the chat box in the chat.html page.
+
+

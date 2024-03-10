@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group Chat</title>
+    <style>
+        body {
+            font-family: Helvetica, sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        .msger-container {
+            flex: 1;
+            display: flex;
+        }
+
+        .msger {
+            flex: 1;
+            display: flex;
+            flex-flow: column wrap;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            background: #fff;
+            box-shadow: 0 15px 15px -5px rgba(0, 0, 0, 0.2);
+        }
+
+        .msger-header {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 2px solid #ddd;
+            background: #eee;
+            color: #666;
+        }
+
+        .msger-chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .msg {
+            display: flex;
+            align-items: flex-end;
+            margin-bottom: 10px;
+        }
+
+        .msg-img {
+            width: 50px;
+            height: 50px;
+            margin-right: 10px;
+            background: #ddd;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: cover;
+            border-radius: 50%;
+        }
+
+        .msg-bubble {
+            max-width: 450px;
+            padding: 15px;
+            border-radius: 15px;
+            background: #ececec;
+        }
+
+        .msg-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .msg-info-name {
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .msg-info-time {
+            font-size: 0.85em;
+        }
+
+        .msger-inputarea {
+            display: flex;
+            padding: 10px;
+            border-top: 2px solid #ddd;
+            background: #eee;
+        }
+
+        .msger-inputarea * {
+            padding: 10px;
+            border: none;
+            border-radius: 3px;
+            font-size: 1em;
+        }
+
+        .msger-input {
+            flex: 1;
+            background: #ddd;
+        }
+
+        .msger-send-btn {
+            margin-left: 10px;
+            background: rgb(0, 196, 65);
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.23s;
+        }
+
+        .msger-send-btn:hover {
+            background: rgb(0, 180, 50);
+        }
+
+        #onlineUsersContainer {
+            width: 20%;
+            background-color: #333;
+            color: white;
+            overflow-y: auto;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        #onlineUsersContainer h2 {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="msger-container">
+            <section class="msger">
+                <header class="msger-header">
+                    <div class="msger-header-title">
+                        <i class="fas fa-comment-alt"></i> RealTime GD
+                    </div>
+                    <div class="msger-header-options">
+                        <span><i class="fas fa-cog"></i></span>
+                    </div>
+                </header>
+
+                <main class="msger-chat">
+                    <div class="msg left-msg">
+                        <div class="msg-img" style="background-image: url(https://image.flaticon.com/icons/svg/327/327779.svg)"></div>
+                        <div class="msg-bubble">
+                            <div class="msg-info">
+                                <div class="msg-info-name">Sushanth</div>
+                                <div class="msg-info-time">12:45</div>
+                            </div>
+                            <div class="msg-text">
+                                Hi, welcome 😄
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="msg right-msg">
+                        <div class="msg-img" style="background-image: url(https://image.flaticon.com/icons/svg/145/145867.svg)"></div>
+                        <div class="msg-bubble">
+                            <div class="msg-info">
+                                <div class="msg-info-name">sushanth</div>
+                                <div class="msg-info-time">12:46</div>
+                            </div>
+                            <div class="msg-text">
+                                difficult
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Repeat the above structure for more chat messages -->
+                </main>
+
+                <form class="msger-inputarea">
+                    <input type="text" class="msger-input" placeholder="Enter your message...">
+                    <button type="submit" class="msger-send-btn">Send</button>
+                </form>
+            </section>
+        </div>
+
+        <div id="onlineUsersContainer">
+            <h2>Online Users</h2>
+            <!-- Online users will be added dynamically here -->
+        </div>
+    </div>
+
+</body>
+</html>
