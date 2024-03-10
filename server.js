@@ -9,7 +9,6 @@ const fs = require("fs");
 const ejs = require("ejs");
 const qrcode = require("qrcode");
 require("dotenv").config();
-const admin = require('firebase-admin');
 
 const app = express();
 const port = 3000;
@@ -26,39 +25,25 @@ mongoose
     console.error("Error connecting to MongoDB:", error);
   });
 
+const admin = require("firebase-admin");
+const serviceAccount = require("./public/assets/realtime-group-discussion-firebase-adminsdk-p748u-744df0c8ff.json");
 
+const firebaseConfig = {
+  apiKey: "AIzaSyCPRBX23loTMM8zRtUI4_TiCZ6yhVTvkgc",
+  authDomain: "realtime-group-discussion.firebaseapp.com",
+  databaseURL: "https://realtime-group-discussion-default-rtdb.firebaseio.com",
+  projectId: "realtime-group-discussion",
+  storageBucket: "realtime-group-discussion.appspot.com",
+  messagingSenderId: "297395929587",
+  appId: "1:297395929587:web:21beac58c3a94e46505286",
+};
 
-  var firebaseConfig = {
-    // Your Firebase project's configuration
-    apiKey: "AIzaSyCPRBX23loTMM8zRtUI4_TiCZ6yhVTvkgc",
-authDomain: "realtime-group-discussion.firebaseapp.com",
-databaseURL: "https://realtime-group-discussion-default-rtdb.firebaseio.com",
-projectId: "realtime-group-discussion",
-storageBucket: "realtime-group-discussion.appspot.com",
-messagingSenderId: "297395929587",
-appId: "1:297395929587:web:21beac58c3a94e46505286"
-  };
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: 'https://realtime-group-discussion-default-rtdb.firebaseio.com',
+});
 
-  firebase.initializeApp(firebaseConfig);
-
-  var db = firebase.database();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+const db = admin.database();
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -82,7 +67,7 @@ const groupSchema = new mongoose.Schema({
   groupId: {
     type: String,
     unique: true, // Ensures groupId is unique
-    required: true
+    required: true,
   },
   groupName: String,
   creatorName: String,
@@ -90,15 +75,7 @@ const groupSchema = new mongoose.Schema({
   location: String,
 });
 
-const Group = mongoose.model('Group', groupSchema);
-
-
-
-
-
-
-
-
+const Group = mongoose.model("Group", groupSchema);
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -530,34 +507,16 @@ app.get("/api/user/email", (req, res) => {
 //   }
 // });
 
-// Add a new story to the database
-app.post("/add-story", async (req, res) => {
-  const { story_id, story_title, description, rating, story_script, genre } =
-    req.body;
 
-  try {
-    const newStory = new Story({
-      story_id,
-      story_title,
-      description,
-      rating,
-      story_script,
-      genre,
-    });
-
-    await newStory.save();
-    res.send("Story added successfully!");
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("Error adding story");
-  }
-});
 
 module.exports = app;
 
 // Route to handle the form submission
-app.post('/creategroup', async (req, res) => {
-  console.log('called');
+// Route to handle the form submission
+// Route to handle the form submission
+app.post("/creategroup", async (req, res, next) => {
+  console.log("called");
+
   try {
     // Process form data
     const groupData = {
@@ -569,28 +528,38 @@ app.post('/creategroup', async (req, res) => {
     };
 
     // Save data to MongoDB
-    const createdGroup = await Group.create(groupData);
+    const createdGroupMongo = await Group.create(groupData);
 
-    // Send a success response
-    res.send('Group created successfully!');
+    // Send a success response for MongoDB
+    res.locals.mongoResult = "Group created successfully in MongoDB!";
+    next(); // Continue to the next handler
   } catch (error) {
-    // Handle errors
-    console.error(error);
-    res.status(500).send('Internal Server Error');
+    // Handle errors for MongoDB
+    console.error("MongoDB Error:", error);
+    res.status(500).send("Internal Server Error (MongoDB)");
   }
 });
 
+app.post("/creategroup", async (req, res) => {
+  console.log("called Firebase");
 
+  try {
+    const groupsRef = db.ref('groups');
+    const groupId = req.body.groupId;
 
+    // Use set to create the node (empty document)
+    await groupsRef.child(groupId).set({});
 
+    console.log("Empty document created successfully in Firebase Realtime Database");
 
-
-
-
-
-
-
-
+    // Send a success response for Firebase Realtime Database
+    res.send("Group created successfully in Firebase Realtime Database!");
+  } catch (error) {
+    // Handle errors for Firebase Realtime Database
+    console.error("Firebase Realtime Database Error:", error);
+    res.status(500).send("Internal Server Error (Firebase Realtime Database)");
+  }
+});
 
 
 
