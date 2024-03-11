@@ -181,6 +181,108 @@
       justify-content: center;
 
     }
+    
+    .message.show {
+      animation: showMessage 0.3s ease-out;
+    }
+
+    @keyframes showMessage {
+      0% {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .message:not(:last-child) {
+      margin-bottom: 20px;
+    }
+
+    /* Add more classes and corresponding colors for additional users */
+.user-example1 {
+  background-color: #e1bcbc;
+}
+
+.user-example2 {
+  background-color: #17d891;
+}
+
+/* Add more classes and corresponding background colors for additional users */
+
+.message {
+  margin-bottom: 10px;
+  position: relative;
+}
+
+.message .name {
+  font-weight: bold;
+}
+
+
+
+
+
+
+
+
+
+.message .replied-message {
+  background-color: #f9f9f9;
+  padding: 5px;
+  margin-top: 5px;
+  border-radius: 5px;
+}
+
+/* Rest of the existing styles */
+
+
+    /* Add more classes and corresponding colors for additional users */
+
+
+  
+
+    .message .timestamp {
+      font-size: 12px;
+      color: #888;
+      margin-left: 10px;
+    }
+
+    .message .content {
+      margin-top: 5px;
+    }
+
+    .message .profile-photo {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-right: 10px;
+    }
+
+    .message .reply-icon {
+      position: absolute;
+      top: 50%;
+      right: 0;
+      transform: translateY(-50%);
+      color: #888;
+      cursor: pointer;
+    }
+
+    .heading {
+      text-align: center;
+    }
+    .bottomtyper{
+      position: fixed;
+      bottom: 0;
+      height: 100px;
+      width: 100%;
+      background-color: #989595;
+      padding: 10px;
+      text-align: center;
+    }
     </style>
 </head>
 <body>
