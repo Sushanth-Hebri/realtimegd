@@ -160,6 +160,27 @@
         .no-online-users{
             color: red;
         }
+        button {
+      padding: 10px 20px;
+      border-radius: 7px;
+      background-color: aqua;
+    }
+
+    #messageContainer {
+      margin-top: 20px;
+      padding: 20px;
+      max-height: 76vh;
+      overflow-y: auto;
+      width: 80%;
+      background-color: rgb(201, 200, 200);
+
+    }
+    #chatContainer{
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+    }
     </style>
 </head>
 <body>
@@ -194,6 +215,11 @@
                         </div>
                     </div>
                   
+
+                    <div id="chatContainer" style="display: none;">
+
+
+
                 </main>
 
                 <form class="msger-inputarea" action="/store-chats-realtime" method="post">
