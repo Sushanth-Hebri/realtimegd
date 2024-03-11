@@ -1,4 +1,6 @@
 const express = require("express");
+const http = require("http");
+const socketIo = require("socket.io");
 const mongoose = require("mongoose");
 const multer = require("multer");
 const bodyParser = require("body-parser");
@@ -10,7 +12,8 @@ const ejs = require("ejs");
 const qrcode = require("qrcode");
 require("dotenv").config();
 const cookieParser = require('cookie-parser');
-
+const cache = require('memory-cache');
+const sharp = require('sharp');
 
 
 
@@ -22,8 +25,12 @@ const cookieParser = require('cookie-parser');
 
 
 const app = express();
+const server = http.createServer(app);
+const io = socketIo(server);
 const port = 3000;
 app.use(cookieParser());
+app.use(express.static(path.join(__dirname, "public")));
+const connectedClients = new Set();
 
 mongoose
   .connect(process.env.MONGO, {
@@ -411,92 +418,6 @@ app.get("/signout", (req, res) => {
   });
 });
 
-// Example to check if the user is authenticated
-app.get("/checkAuth", (req, res) => {
-  const userEmail = req.session.email;
-  if (userEmail) {
-    console.log(`User authenticated: ${userEmail}`);
-    res.send(`User authenticated: ${userEmail}`);
-  } else {
-    console.log("User not authenticated");
-    res.send("User not authenticated");
-  }
-});
-
-// app.js
-// app.get('/story', async (req, res) => {
-//     try {
-//         console.log('Fetching stories...');
-//         const stories = await Story.find();
-//         console.log('Fetched stories:', stories);
-
-//         // Render the EJS template with data
-//         res.render('story', { stories });
-//     } catch (error) {
-//         console.error('Error fetching stories:', error);
-//         res.status(500).send('Error fetching stories');
-//     }
-// });
-app.get("/story", async (req, res) => {
-  try {
-    // Retrieve the story_id from the query parameters
-    const storyId = req.query.story_id;
-
-    if (!storyId) {
-      // If no story_id provided, return 400 Bad Request
-      console.log("No story_id provided");
-      return res.status(400).send("Bad Request: story_id not provided");
-    }
-
-    console.log("Fetching story with story_id:", storyId);
-    // Fetch the story with the given story_id
-    const story = await Story.findOne({ story_id: storyId });
-
-    if (!story) {
-      // If no story found, redirect to error.html
-      console.log("Story not found with story_id:", storyId);
-      return res.status(404).send("Story not found");
-    }
-    // Continue with the rest of your code if the story is found
-
-    console.log("Fetched story:", story);
-    // Render the EJS template with the story
-    res.render("story", { story });
-  } catch (error) {
-    console.error("Error fetching story:", error);
-    res.status(500).send("Error fetching story");
-  }
-});
-
-app.post("/api/genre", async (req, res) => {
-  console.log("im being called");
-  const selectedGenre = req.body.genre;
-  console.log(selectedGenre);
-
-  try {
-    // Fetch all stories from the collection based on the selected genre
-    const stories = await Story.find({ genre: selectedGenre });
-
-    // Log the fetched documents to the console
-    console.log("Fetched documents:", stories);
-
-    // Prepare the response data
-    const updatedContent = stories.map((story) => ({
-      story_id: story.story_id,
-      story_title: story.story_title,
-      description: story.description,
-      rating: story.rating,
-      story_script: story.story_script,
-      // Add other properties as needed
-    }));
-
-    // Send the response back to home.js
-    res.json({ updatedContent });
-  } catch (error) {
-    console.error("Error fetching stories:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-});
 
 app.get("/api/user/email", (req, res) => {
   // Retrieve email from the session
@@ -506,146 +427,174 @@ app.get("/api/user/email", (req, res) => {
   res.json({ email: userEmail });
 });
 
-// // Handle signup form submission
-// app.post("/signup", async (req, res) => {
-//   const { email, password } = req.body;
-
-//   try {
-
-//     const hashedPassword = await bcrypt.hash(password, 10);
-
-//     // Create a new user with email and hashed password
-//     const newUser = new User({
-//       email,
-//       password: hashedPassword,
-//     });
-
-//     // Save the user to the database
-//     await newUser.save();
-//     res.redirect("/signin");
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).send("Error registering user");
-//   }
-// });
-
-
-
-module.exports = app;
-
-// Route to handle the form submission
-// Route to handle the form submission
-// Route to handle the form submission
-app.post("/creategroup", async (req, res, next) => {
-  console.log("called");
-
-  try {
-    // Process form data
-    const groupData = {
-      groupName: req.body.groupName,
-      creatorName: req.body.creatorName,
-      groupId: req.body.groupId,
-      communityGuidelines: req.body.communityGuidelines,
-      location: req.body.location,
-    };
-
-    // Save data to MongoDB
-    const createdGroupMongo = await Group.create(groupData);
-
-    // Send a success response for MongoDB
-    res.locals.mongoResult = "Group created successfully in MongoDB!";
-    next(); // Continue to the next handler
-  } catch (error) {
-    // Handle errors for MongoDB
-    console.error("MongoDB Error:", error);
-    res.status(500).send("Internal Server Error (MongoDB)");
-  }
-});
-
-app.post("/creategroup", async (req, res) => {
-  console.log("called Firebase");
-
-  try {
-    const groupsRef = db.ref('groups');
-    const groupId = req.body.groupId;
-
-    // Use set to create the node (empty document)
-    await groupsRef.child(groupId).set({});
-
-    console.log("Empty document created successfully in Firebase Realtime Database");
-
-    // Send a success response for Firebase Realtime Database
-    res.send("Group created successfully in Firebase Realtime Database!");
-  } catch (error) {
-    // Handle errors for Firebase Realtime Database
-    console.error("Firebase Realtime Database Error:", error);
-    res.status(500).send("Internal Server Error (Firebase Realtime Database)");
-  }
-});
-
-
-
-
-
-
 
 app.post("/joingroup", async (req, res) => {
   try {
     console.log('join group called');
     const groupId = req.body.groupId;
     const email = req.body.email;
-
-   // Retrieve email from local storage
     const location = req.body.location;
+
+
+
+
+
+
+
+
 
     console.log("Received request to join group:");
     console.log("Group ID:", groupId);
-
     console.log("User Email:", email);
     console.log("Location:", location);
 
     if (groupId === "groups" && email && location) {
-      const onlineRef = db.ref('online');
+      // Fetch user details from MongoDB based on the email
+      const user = await User.findOne({ email });
 
-      // Store email and location in the "online" collection
-      await onlineRef.push({
-        email: email,
-        location: location
-      });
+      if (!user) {
+        console.log("User not found in MongoDB.");
+        return res.status(404).send("User not found in MongoDB.");
+      }
 
-      console.log("User joined group successfully in Firebase Realtime Database");
+      // Store username and profile in local storage
+      res.cookie('username', user.username, { maxAge: 86400000 }); 
+  
 
-      // Send a success response for Firebase Realtime Database
-      res.status(200).send("User joined group successfully in Firebase Realtime Database!");
+      // Send a success response
+      res.status(200).send("User details stored in local storage.");
     } else {
       console.log("Invalid request or missing required data.");
       res.status(400).send("Invalid request or missing required data.");
     }
   } catch (error) {
-    // Handle errors for Firebase Realtime Database
-    console.error("Firebase Realtime Database Error:", error);
-    res.status(500).send("Internal Server Error (Firebase Realtime Database)");
+    // Handle errors for MongoDB
+    console.error("Error:", error);
+
+    // Send an appropriate error response
+    res.status(500).send("Internal Server Error. Please try again later.");
+  }
+});
+
+
+// app.get("/profileImage", async (req, res) => {
+//   try {
+//     // Retrieve email from the session or cookies
+//     const email = req.session.email || req.cookies.email;
+
+//     if (!email) {
+//       return res.status(404).send("Email not found in session or cookies.");
+//     }
+
+//     // Check if the image is in the cache
+//     const cachedImage = cache.get(email);
+//     if (cachedImage) {
+//       res.contentType('image/jpeg'); // Set the content type based on your image format
+//       res.send(cachedImage);
+//     } else {
+//       // Fetch the image from MongoDB
+//       const user = await User.findOne({ email });
+
+//       if (!user || !user.profile || !user.profile.data) {
+//         return res.status(404).send("Profile image not found.");
+//       }
+
+//       // Resize the image (adjust options as needed)
+//       const resizedImageBuffer = await sharp(user.profile.data)
+//         .resize({ width: 300 }) // Set the desired width
+//         .toBuffer();
+
+//       // Convert resized binary data to base64
+//       const base64Data = resizedImageBuffer.toString('base64');
+
+//       // Cache the image and send it
+//       cache.put(email, resizedImageBuffer);
+//       res.contentType(user.profile.contentType);
+//       res.send(base64Data);
+//       console.log(base64Data);
+//     }
+//   } catch (error) {
+//     console.error("Error fetching profile image:", error);
+//     res.status(500).send("Internal Server Error");
+//   }
+// });
+
+app.get("/profileImage", async (req, res) => {
+  try {
+    const email = req.cookies.email;
+
+    const user = await User.findOne({ email });
+
+    if (!user || !user.profile || !user.profile.data) {
+      return res.status(404).send("Profile image not found.");
+    }
+
+    res.contentType(user.profile.contentType);
+    res.send(user.profile.data);
+  } catch (error) {
+    console.error("Error fetching profile image:", error);
+    res.status(500).send("Internal Server Error");
   }
 });
 
 
 
-app.get('/deleteit', (req, res) => {
-  // Access the session here
-  const email = req.session.email;
 
-  // Log the email to the console
-  console.log("Email:", email);
 
-  // Additional logic for the route can be added here if needed
-  // ...
 
-  // Send a response to the client if needed
-  res.send("Email logged in the console.");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Online users showing feature
+io.on("connection", (socket) => {
+  console.log("New client connected");
+
+  socket.username = "Anonymous";
+  socket.profileImageUrl = ""; // Add this line to store profile image URL
+  connectedClients.add(socket);
+  updateOnlineUsers();
+
+  socket.on("set username", (username) => {
+    socket.username = username;
+    updateOnlineUsers();
+  });
+
+  socket.on("set profile image", (profileImageUrl) => {
+    socket.profileImageUrl = profileImageUrl; // Set the profile image URL
+    updateOnlineUsers();
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Client has disconnected");
+    connectedClients.delete(socket);
+    updateOnlineUsers();
+  });
 });
 
+function updateOnlineUsers() {
+  const onlineUsers = Array.from(connectedClients).map((socket) => ({
+    username: socket.username || "Anonymous",
+    profileImageUrl: socket.profileImageUrl || "" // Include profile image URL in the online users list
+  }));
+  io.emit("update online users", onlineUsers);
+  console.log("Online Users:", onlineUsers);
+}
 
 
+app.get("/chatexp", (req, res) => {
+  res.sendFile("chatexp.html", { root: "public" });
+});
 
 
 
@@ -662,10 +611,59 @@ app.get('/deleteit', (req, res) => {
 
 
 // Start the server
-app.listen(port, () => {
-  console.log(`Server is running at http://localhost:${port}`);
+// app.listen(port, () => {
+//   console.log(`Server is running at http://localhost:${port}`);
+// });
+
+// Handle form submission for chat
+// Handle form submission
+app.post('/store-chats-realtime', async (req, res) => {
+  try {
+    const { email, username, message, profileImageUrl } = req.body;
+
+    // Check if the required fields are present
+    if (!email || !username || !message || !profileImageUrl) {
+      return res.status(400).send('Email, username, message, and profileImageUrl are required.');
+    }
+
+    // Store the message in Firebase Realtime Database
+    const messagesRef = admin.database().ref('messages');
+    const newMessageRef = messagesRef.push();
+
+    await newMessageRef.set({
+      email,
+      username,
+      message,
+      profileImageUrl,
+      timestamp: admin.database.ServerValue.TIMESTAMP,
+    });
+
+    // Send a success response
+    res.status(200).send('Message stored successfully.');
+  } catch (error) {
+    console.error('Error handling form submission:', error);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+server.listen(port, () => {
+  console.log(`Server is running at http://localhost:${port}`);
+});
 
 // as we click join group button in joingroup.html page, 
 // user email along with his location will be stored in the firebase realtime database in collection "online"

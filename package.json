@@ -19,11 +19,14 @@
     "express-session": "^1.18.0",
     "firebase-admin": "^12.0.0",
     "fs": "^0.0.1-security",
+    "memory-cache": "^0.2.0",
     "mongoose": "^8.2.1",
     "multer": "^1.4.5-lts.1",
     "node": "^21.6.2",
     "path": "^0.12.7",
     "qrcode": "^1.5.3",
+    "sharp": "^0.33.2",
+    "socket.io": "^4.7.4",
     "ws": "^8.16.0"
   }
 }

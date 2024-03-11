@@ -68,11 +68,13 @@
         }
 
         .msg-bubble {
-            max-width: 450px;
-            padding: 15px;
-            border-radius: 15px;
-            background: #ececec;
-        }
+    max-width: 89%; /* Set to 100% to allow flexibility */
+    word-wrap: break-word; /* Allow long words to be broken and wrap to the next line */
+    padding: 15px;
+    border-radius: 15px;
+    background: #ececec;
+}
+
 
         .msg-info {
             display: flex;
@@ -129,10 +131,34 @@
             overflow-y: auto;
             padding: 10px;
             box-sizing: border-box;
+            text-align: center;
         }
 
         #onlineUsersContainer h2 {
             margin-bottom: 10px;
+        }
+        .online-user {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .profile-image {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .username {
+            font-weight: bold;
+            color: #333;
+        }
+        .online-count{
+            color: rgb(103, 233, 103);
+        }
+        .no-online-users{
+            color: red;
         }
     </style>
 </head>
@@ -151,8 +177,12 @@
                 </header>
 
                 <main class="msger-chat">
-                    <div class="msg left-msg">
-                        <div class="msg-img" style="background-image: url(https://image.flaticon.com/icons/svg/327/327779.svg)"></div>
+                   
+
+                    
+
+                    <div class="msg left-msg" id="userMessage">
+                        <div class="msg-img" id="profileImage"></div>
                         <div class="msg-bubble">
                             <div class="msg-info">
                                 <div class="msg-info-name">Sushanth</div>
@@ -163,34 +193,117 @@
                             </div>
                         </div>
                     </div>
-
-                    <div class="msg right-msg">
-                        <div class="msg-img" style="background-image: url(https://image.flaticon.com/icons/svg/145/145867.svg)"></div>
-                        <div class="msg-bubble">
-                            <div class="msg-info">
-                                <div class="msg-info-name">sushanth</div>
-                                <div class="msg-info-time">12:46</div>
-                            </div>
-                            <div class="msg-text">
-                                difficult
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Repeat the above structure for more chat messages -->
+                  
                 </main>
 
-                <form class="msger-inputarea">
-                    <input type="text" class="msger-input" placeholder="Enter your message...">
+                <form class="msger-inputarea" action="/store-chats-realtime" method="post">
+                    <!-- Hidden input fields -->
+                    <input type="hidden" name="email" id="hiddenEmail" value="" required>
+                    <input type="hidden" name="username" id="hiddenUsername" value="" required>
+                    <input type="hidden" name="profileImageUrl" id="hiddenProfileImageUrl" value="" required>
+                
+                    <!-- Message input field -->
+                    <input type="text" class="msger-input" placeholder="Enter your message..." name="message" required>
+                
+                    <!-- Send button -->
                     <button type="submit" class="msger-send-btn">Send</button>
                 </form>
+                
             </section>
         </div>
 
         <div id="onlineUsersContainer">
             <h2>Online Users</h2>
             <!-- Online users will be added dynamically here -->
+           
+
         </div>
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+          const socket = io();
+          const profileImageElement = document.getElementById('profileImage');
+          const onlineUsersContainer = document.getElementById('onlineUsersContainer');
+      
+          let imageUrl;
 
+try {
+  // Fetch the profile image
+  const response = await fetch(`/profileImage`);
+
+  if (!response.ok) {
+    throw new Error(`Error fetching profile image: ${response.status}`);
+  }
+
+  // Get the image data as blob
+  const imageDataBlob = await response.blob();
+
+  // Create a blob URL for the image data
+  imageUrl = URL.createObjectURL(imageDataBlob);
+
+  // Set the background image using the blob URL
+  profileImageElement.style.backgroundImage = `url(${imageUrl})`;
+
+  // Handle cleanup of blob URL when it's no longer needed
+  profileImageElement.addEventListener('load', () => URL.revokeObjectURL(imageUrl));
+} catch (error) {
+  console.error('Error fetching and displaying profile image:', error);
+}
+      
+          // Retrieve username and profile image URL
+          const username = decodeURIComponent(document.cookie.split('; ')
+    .find(row => row.startsWith('username='))
+    .split('=')[1]);
+
+
+
+       // Set the value of the hidden input field
+       document.getElementById('hiddenUsername').value = username;
+      
+          // Emit the 'set username' and 'set profile image' events to the server
+          socket.emit('set username', username);
+          socket.emit('set profile image', imageUrl);
+      
+
+          // Set the value of the hidden input field
+       document.getElementById('hiddenProfileImageUrl').value = imageUrl;
+
+
+          // Listen for updated online users
+          socket.on('update online users', (onlineUsers) => {
+            // Update your online users list in the interface
+            const usersList = onlineUsers.map(user => `
+              <div class="online-user">
+                <img src="${user.profileImageUrl}" alt="Profile Image" class="profile-image">
+                <h3>${user.username}</h3>
+              </div>
+            `).join('');
+      // Assign a separate class for the count
+      const countClass = onlineUsers.length > 0 ? 'online-count' : 'no-online-users';
+      
+      onlineUsersContainer.innerHTML = `<h2 class="${countClass}">Online Users (${onlineUsers.length})</h2>${usersList}`;
+          });
+      
+          // Rest of your existing client-side code...
+        });
+      </script>
+
+
+
+      <script>
+        document.addEventListener('DOMContentLoaded', function () {
+          // Retrieve email from the cookie
+          const userEmail = decodeURIComponent(document.cookie.split('; ')
+            .find(row => row.startsWith('email='))
+            .split('=')[1]);
+      
+          // Set the value of the hidden input field
+          document.getElementById('hiddenEmail').value = userEmail;
+        });
+      </script>
+      
+      
 </body>
 </html>
