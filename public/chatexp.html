@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -277,8 +278,8 @@
     .bottomtyper{
       position: fixed;
       bottom: 0;
-      height: 100px;
-      width: 100%;
+      height: 80px;
+      width: 78%;
       background-color: #989595;
       padding: 10px;
       text-align: center;
@@ -305,7 +306,7 @@
                     
 
                     <div class="msg left-msg" id="userMessage">
-                        <div class="msg-img" id="profileImage"></div>
+                        <div class="msg-img" class="profileImage"></div>
                         <div class="msg-bubble">
                             <div class="msg-info">
                                 <div class="msg-info-name">Sushanth</div>
@@ -316,7 +317,18 @@
                             </div>
                         </div>
                     </div>
-                  
+                    <div class="msg left-msg" id="userMessage">
+                      <div class="msg-img" class="profileImage"></div>
+                      <div class="msg-bubble">
+                          <div class="msg-info">
+                              <div class="msg-info-name">Sushanth</div>
+                              <div class="msg-info-time">12:45</div>
+                          </div>
+                          <div class="msg-text">
+                              Hi, welcome 😄
+                          </div>
+                      </div>
+                  </div>
 
                     <div id="chatContainer" style="display: none;">
 
@@ -324,19 +336,25 @@
 
                 </main>
 
-                <form class="msger-inputarea" action="/store-chats-realtime" method="post">
-                    <!-- Hidden input fields -->
-                    <input type="hidden" name="email" id="hiddenEmail" value="" required>
-                    <input type="hidden" name="username" id="hiddenUsername" value="" required>
-                    <input type="hidden" name="profileImageUrl" id="hiddenProfileImageUrl" value="" required>
+                <div class="bottomtyper">
+                  <input type="text" id="messageInput" placeholder="Type your message...">
+                  <input type="hidden" name="email" id="hiddenEmail" value="" required>
+                  <input type="hidden" name="username" id="hiddenUsername" value="" required>
+                  <input type="hidden" name="profileImageUrl" id="hiddenProfileImageUrl" value="" required>
+
+                  <button id="sendButton">Send</button>
+                </div>
                 
-                    <!-- Message input field -->
-                    <input type="text" class="msger-input" placeholder="Enter your message..." name="message" required>
+
                 
-                    <!-- Send button -->
-                    <button type="submit" class="msger-send-btn">Send</button>
-                </form>
-                
+<form class="msger-inputarea" action="/store-chats-realtime" method="post">
+  <!-- Hidden input fields -->
+  <!-- Message input field -->
+  <input type="text" class="msger-input" placeholder="Enter your message..." name="message" required>
+  <!-- Send button -->
+  <button type="submit" class="msger-send-btn">Send</button>
+</form>
+
             </section>
         </div>
 
@@ -349,89 +367,268 @@
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+
+    
     <script>
-        document.addEventListener('DOMContentLoaded', async function () {
-          const socket = io();
-          const profileImageElement = document.getElementById('profileImage');
-          const onlineUsersContainer = document.getElementById('onlineUsersContainer');
-      
-          let imageUrl;
+    document.addEventListener('DOMContentLoaded', async function () {
+  const socket = io();
+  const profileImageElement = document.getElementsByClassName('profileImage');
+  const onlineUsersContainer = document.getElementById('onlineUsersContainer');
+  
 
-try {
-  // Fetch the profile image
-  const response = await fetch(`/profileImage`);
 
-  if (!response.ok) {
-    throw new Error(`Error fetching profile image: ${response.status}`);
-  }
 
-  // Get the image data as blob
-  const imageDataBlob = await response.blob();
 
-  // Create a blob URL for the image data
-  imageUrl = URL.createObjectURL(imageDataBlob);
+  let imageUrl;
+//   try {
+//   const response = await fetch('/profileImage');
+//   console.log(response);
+//   if (!response.ok) {
+//     throw new Error(`Error fetching profile image: ${response.status}`);
+//   }
 
-  // Set the background image using the blob URL
-  profileImageElement.style.backgroundImage = `url(${imageUrl})`;
+//   // Get the image URL directly
+//   profileImageUrl = response.url;
 
-  // Handle cleanup of blob URL when it's no longer needed
-  profileImageElement.addEventListener('load', () => URL.revokeObjectURL(imageUrl));
-} catch (error) {
-  console.error('Error fetching and displaying profile image:', error);
-}
-      
-          // Retrieve username and profile image URL
-          const username = decodeURIComponent(document.cookie.split('; ')
+//   console.log('hey '+ profileImageUrl);
+
+//   // Display the image using the URL
+//   profileImageElement.style.backgroundImage = `$url(profileImageUrl)`;
+// } catch (error) {
+//   console.error('Error fetching and displaying profile image:', error);
+// } 
+
+
+
+
+
+
+
+
+
+
+const username = decodeURIComponent(document.cookie.split('; ')
+  .find(row => row.startsWith('username='))
+  .split('=')[1]);
+
+document.getElementById('hiddenUsername').value = username;
+socket.emit('set username', username);
+socket.emit('set profile image', imageUrl);
+
+document.getElementById('hiddenProfileImageUrl').value = imageUrl;
+
+socket.on('update online users', (onlineUsers) => {
+  const usersList = onlineUsers.map(user => `
+    <div class="online-user">
+      <img src="${user.profileImageUrl}" alt="Profile Image" class="profile-image">
+      <h3>${user.username}</h3>
+    </div>
+  `).join('');
+  const countClass = onlineUsers.length > 0 ? 'online-count' : 'no-online-users';
+
+  onlineUsersContainer.innerHTML = `<h2 class="${countClass}">Online Users (${onlineUsers.length})</h2>${usersList}`;
+});
+
+
+
+
+
+
+  socket.on('newMessage', (newMessage) => {
+    console.log('Received new message:', newMessage);
+    // Handle the new message as needed
+  });
+
+
+
+
+
+
+
+
+  var chatContainer = document.getElementById('chatContainer');
+  var messageInput = document.getElementById('messageInput');
+  var sendButton = document.getElementById('sendButton');
+  var messageContainer = document.getElementById('messageContainer');
+
+  const email = decodeURIComponent(document.cookie.split('; ')
+    .find(row => row.startsWith('email='))
+    .split('=')[1]);
+
+  const username2 = decodeURIComponent(document.cookie.split('; ')
     .find(row => row.startsWith('username='))
     .split('=')[1]);
 
+  messageInput.addEventListener('keydown', function(event) {
+    if (event.keyCode === 13) {
+      event.preventDefault();
+      var message = messageInput.value.trim();
+      if (message !== '') {
+        sendMessageToServer(message, email, username2, imageUrl);
+        displayallmessages();
+        messageInput.value = '';
+      }
+    }
+  });
+
+  function sendMessageToServer(message, email, username, imageUrl) {
+    const serverURL = '/store-chats-realtime';
+    
+    const requestBody = {
+      email: email,
+      username: username,
+      message: message,
+      profileImageUrl: imageUrl
+    };
+
+    fetch(serverURL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log('Message sent successfully:', data);
+      // You can handle the response from the server as needed
+    })
+    .catch(error => {
+      console.error('Error sending message:', error);
+    });
+  }
+
+  function displayallmessages(){
+
+  }
+});
 
 
-       // Set the value of the hidden input field
-       document.getElementById('hiddenUsername').value = username;
-      
-          // Emit the 'set username' and 'set profile image' events to the server
-          socket.emit('set username', username);
-          socket.emit('set profile image', imageUrl);
-      
-
-          // Set the value of the hidden input field
-       document.getElementById('hiddenProfileImageUrl').value = imageUrl;
 
 
-          // Listen for updated online users
-          socket.on('update online users', (onlineUsers) => {
-            // Update your online users list in the interface
-            const usersList = onlineUsers.map(user => `
-              <div class="online-user">
-                <img src="${user.profileImageUrl}" alt="Profile Image" class="profile-image">
-                <h3>${user.username}</h3>
-              </div>
-            `).join('');
-      // Assign a separate class for the count
-      const countClass = onlineUsers.length > 0 ? 'online-count' : 'no-online-users';
-      
-      onlineUsersContainer.innerHTML = `<h2 class="${countClass}">Online Users (${onlineUsers.length})</h2>${usersList}`;
-          });
-      
-          // Rest of your existing client-side code...
-        });
+
+
+
+
+
+
+
+
+function displayMessage(snapshot) {
+  var data = snapshot.val();
+  var name = data.name;
+  var photoUrl = data.photoUrl;
+  var message = data.text;
+  var timestamp = formatTimestamp(data.timestamp);
+
+  var repliedMessageId = '';
+  var repliedMessageContent = '';
+
+  if (message.includes('@')) {
+    var replyRegex = /@([a-zA-Z0-9-]+)\s/;
+    var replyMatches = message.match(replyRegex);
+    if (replyMatches && replyMatches.length > 1) {
+      var repliedUserName = replyMatches[1];
+      var repliedMessageElement = document.querySelector('.message.user-' + repliedUserName);
+      if (repliedMessageElement) {
+        repliedMessageId = repliedMessageElement.getAttribute('data-id');
+        repliedMessageContent = repliedMessageElement.querySelector('.content').textContent;
+      }
+    }
+  }
+
+  var messageElement = document.createElement('div');
+  messageElement.classList.add('message');
+  messageElement.classList.add(getUserClass(name));
+  messageElement.setAttribute('data-id', snapshot.key);
+  messageElement.innerHTML = '<img src="' + photoUrl + '" class="profile-photo">' +
+    '<span class="name">' + name + ':</span> <span class="content">' + message + '</span><span class="timestamp">' + timestamp + '</span><i class="material-icons reply-icon">reply</i>';
+
+  if (repliedMessageId !== '') {
+    var repliedMessageElement = document.createElement('div');
+    repliedMessageElement.classList.add('replied-message');
+    repliedMessageElement.innerHTML = '<span class="replied-by">Replied to:</span> <span class="replied-content">' + repliedMessageContent + '</span>';
+    messageElement.appendChild(repliedMessageElement);
+  }
+
+  messageContainer.appendChild(messageElement);
+  messageContainer.scrollTop = messageContainer.scrollHeight;
+  setTimeout(function() {
+    messageElement.classList.add('show');
+  }, 10);
+
+  var replyIcon = messageElement.querySelector('.reply-icon');
+  replyIcon.addEventListener('click', function() {
+    messageInput.value = '@' + name + ' ';
+    messageInput.focus();
+  });
+}
+
+
+    function getUserClass(name) {
+      // Generate a unique CSS class based on the user's name
+      var sanitized = name.toLowerCase().replace(/\s/g, '-').replace(/[^a-z0-9-]/g, '');
+      return 'user-' + sanitized;
+    }
+
+    function formatTimestamp(timestamp) {
+      var date = new Date(timestamp);
+      var hours = date.getHours();
+      var minutes = date.getMinutes();
+      var seconds = date.getSeconds();
+      hours = (hours < 10) ? '0' + hours : hours;
+      minutes = (minutes < 10) ? '0' + minutes : minutes;
+      seconds = (seconds < 10) ? '0' + seconds : seconds;
+      return hours + ':' + minutes + ':' + seconds;
+    }
+
+    // db.ref('messages').orderByChild('timestamp').on('child_added', function(snapshot) {
+    //   displayMessage(snapshot);
+    // });
+
+    // Check if user's name is already set and show the chat if it is
+    // showChat();
+
+
+    function displayMessage(message) {
+  console.log('Message ID:', message.id);
+  console.log('Name:', message.username);
+  console.log('Photo URL:', message. profileImageUrl);
+  console.log('Text:', message. message);
+  console.log('Timestamp:', message.timestamp);
+  // console.log(message);
+
+  // Implement your logic to display messages on the client
+  // For example, you can create HTML elements and append them to a container
+}
+
+
+
+document.addEventListener('DOMContentLoaded', function () {
+  // Your existing code...
+
+  // Fetch initial messages
+  fetch('/get-messages')
+    .then(response => response.json())
+    .then(messages => {
+      // Display initial messages
+      messages.forEach(message => {
+        displayMessage(message);
+      });
+    })
+    .catch(error => {
+      console.error('Error fetching messages:', error);
+    });
+});
+
+
       </script>
-
-
-
-      <script>
-        document.addEventListener('DOMContentLoaded', function () {
-          // Retrieve email from the cookie
-          const userEmail = decodeURIComponent(document.cookie.split('; ')
-            .find(row => row.startsWith('email='))
-            .split('=')[1]);
-      
-          // Set the value of the hidden input field
-          document.getElementById('hiddenEmail').value = userEmail;
-        });
-      </script>
-      
       
 </body>
 </html>

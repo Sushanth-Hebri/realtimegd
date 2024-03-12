@@ -14,6 +14,16 @@ require("dotenv").config();
 const cookieParser = require('cookie-parser');
 const cache = require('memory-cache');
 const sharp = require('sharp');
+const { v4: uuidv4 } = require('uuid');
+const cors = require('cors');
+const { Storage } = require('@google-cloud/storage');
+// Replace this line
+// const fetch = require('node-fetch');
+// with dynamic import
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+
+
+
 
 
 
@@ -31,6 +41,16 @@ const port = 3000;
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 const connectedClients = new Set();
+// app.use(cors());
+
+
+
+
+
+
+
+
+
 
 mongoose
   .connect(process.env.MONGO, {
@@ -52,7 +72,7 @@ const firebaseConfig = {
   authDomain: "realtime-group-discussion.firebaseapp.com",
   databaseURL: "https://realtime-group-discussion-default-rtdb.firebaseio.com",
   projectId: "realtime-group-discussion",
-  storageBucket: "realtime-group-discussion.appspot.com",
+  storageBucket: "realtime-group-discussion.appspot.com", // Add the storage bucket URL
   messagingSenderId: "297395929587",
   appId: "1:297395929587:web:21beac58c3a94e46505286",
 };
@@ -60,9 +80,47 @@ const firebaseConfig = {
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: 'https://realtime-group-discussion-default-rtdb.firebaseio.com',
+  storageBucket: firebaseConfig.storageBucket, // Use the storage bucket URL from firebaseConfig
 });
 
+const firestore = admin.firestore();
+const storageBucket = admin.storage().bucket();
 const db = admin.database();
+
+console.log('Storage Bucket Name:');
+
+
+// const firebaseConfig = {
+//   apiKey: "AIzaSyCPRBX23loTMM8zRtUI4_TiCZ6yhVTvkgc",
+//   authDomain: "realtime-group-discussion.firebaseapp.com",
+//   databaseURL: "https://realtime-group-discussion-default-rtdb.firebaseio.com",
+//   projectId: "realtime-group-discussion",
+//   storageBucket: "realtime-group-discussion.appspot.com",
+//   messagingSenderId: "297395929587",
+//   appId: "1:297395929587:web:21beac58c3a94e46505286",
+// };
+
+// admin.initializeApp({
+//   credential: admin.credential.cert(serviceAccount),
+//   databaseURL: 'https://realtime-group-discussion-default-rtdb.firebaseio.com',
+// });
+
+// const db = admin.database();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -71,14 +129,11 @@ app.use(bodyParser.json());
 const userSchema = new mongoose.Schema({
   username: String,
   dob: Date,
-  email: { type: String, unique: true }, // Make email field unique
+  email: { type: String, unique: true },
   password: String,
-  profile: {
-    data: Buffer,
-    contentType: String,
-  },
-  webqrdata: String, // Add the webqrdata field
-  appqrdata: String, // Add the appqrdata field
+  profileImageUrl: String, // Store the image URL instead of image data
+  webqrdata: String,
+  appqrdata: String,
 });
 
 // Create a Mongoose schema for group details on mongodb
@@ -96,89 +151,90 @@ const groupSchema = new mongoose.Schema({
 
 const Group = mongoose.model("Group", groupSchema);
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads");
-  },
-  filename: (req, file, cb) => {
-    cb(null, file.fieldname + "-" + Date.now());
-  },
-});
 
-const upload = multer({ storage });
+// const storage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     cb(null, "uploads");
+//   },
+//   filename: (req, file, cb) => {
+//     cb(null, file.fieldname + "-" + Date.now());
+//   },
+// });
 
-app.post("/signup", upload.single("profileImage"), async (req, res) => {
+// const upload = multer({ storage });
+// Configure Multer for file uploads
+const upload = multer();
+app.post('/signup', upload.single('profileImage'), async (req, res) => {
   try {
+    console.log('Storage Bucket Name:', storageBucket.name);
+
     // Validate form fields
-    if (
-      !req.body.username ||
-      !req.body.dob ||
-      !req.body.email ||
-      !req.body.password
-    ) {
-      return res
-        .status(400)
-        .send(
-          '<script>alert("All form fields are required."); window.location.href="/signup";</script>'
-        );
+    if (!req.body.username || !req.body.dob || !req.body.email || !req.body.password) {
+      return res.status(400).send('<script>alert("All form fields are required."); window.location.href="/signup";</script>');
     }
 
     // Check if email already exists
     const existingUser = await User.findOne({ email: req.body.email });
     if (existingUser) {
-      return res
-        .status(400)
-        .send(
-          '<script>alert("Email already exists. Please choose another email."); window.location.href="/signup";</script>'
-        );
+      return res.status(400).send('<script>alert("Email already exists. Please choose another email."); window.location.href="/signup";</script>');
     }
 
     // Check if file was uploaded
     if (!req.file) {
-      return res
-        .status(400)
-        .send(
-          '<script>alert("Please upload a profile picture."); window.location.href="/signup";</script>'
-        );
+      return res.status(400).send('<script>alert("Please upload a profile picture."); window.location.href="/signup";</script>');
     }
 
     // Hash the password
     const hashedPassword = await bcrypt.hash(req.body.password, 10);
 
-    // Process form data and uploaded image
-    const obj = {
-      username: req.body.username,
-      dob: req.body.dob,
-      email: req.body.email,
-      password: hashedPassword, // Store the hashed password
-      profile: {
-        data: fs.readFileSync(
-          path.join(__dirname, "uploads", req.file.filename)
-        ),
-        contentType: req.file.mimetype,
-      },
-      webqrdata: generateRandomString(),
-      appqrdata: generateRandomString(),
-    };
+    // Upload the profile image to Firebase Storage
+    const fileExtension = req.file.originalname.split('.').pop();
+    const fileName = `${uuidv4()}.${fileExtension}`;
+    const fileUpload = storageBucket.file(`profile-images/${fileName}`);
+    const blobStream = fileUpload.createWriteStream();
 
-    // Save data to MongoDB
-    await User.create(obj);
+    blobStream.on('finish', async () => {
+      try {
+        // Get the download URL from Firebase Storage
+        const imageUrl = await fileUpload.getSignedUrl({
+          action: 'read',
+          expires: '03-09-2500', // Set an appropriate expiration date
+        });
 
-    // Remove the file from the disk
-    fs.unlinkSync(path.join(__dirname, "uploads", req.file.filename));
+        // Remove the common part of the URL
+        const trimmedImageUrl = imageUrl[0].replace('https://storage.googleapis.com/realtime-group-discussion.appspot.com/', '');
 
-    // Redirect or send a success response
-    res.send('<script>window.location.href="/signin";</script>');
+        // Process form data and uploaded image
+        const userObj = {
+          username: req.body.username,
+          dob: req.body.dob,
+          email: req.body.email,
+          password: hashedPassword,
+          profileImageUrl: trimmedImageUrl, // Add the trimmed profile image URL to the user document
+          webqrdata: generateRandomString(),
+          appqrdata: generateRandomString(),
+        };
+
+        // Save data to MongoDB
+        await User.create(userObj);
+
+        // Redirect or send a success response
+        res.send('<script>window.location.href="/signin";</script>');
+      } catch (error) {
+        console.error("Error processing image URL:", error);
+        res.status(500).send('<script>alert("Internal Server Error"); window.location.href="/signup";</script>');
+      }
+    });
+
+    blobStream.end(req.file.buffer);
   } catch (error) {
     // Handle errors
     console.error(error);
-    res
-      .status(500)
-      .send(
-        '<script>alert("Internal Server Error"); window.location.href="/signup";</script>'
-      );
+    res.status(500).send('<script>alert("Internal Server Error"); window.location.href="/signup";</script>');
   }
 });
+
+
 
 // Handle signin form submission
 // Handle signin form submission
@@ -521,22 +577,57 @@ app.post("/joingroup", async (req, res) => {
 
 app.get("/profileImage", async (req, res) => {
   try {
-    const email = req.cookies.email;
+    const email = req.cookies.email; // Assuming email is in cookies
 
     const user = await User.findOne({ email });
 
-    if (!user || !user.profile || !user.profile.data) {
-      return res.status(404).send("Profile image not found.");
+    if (!user) {
+      return res.status(404).send("user not found -s");
     }
+    console.log(`imageurl: ${user.profileImageUrl}`);
+    
+    // // Assuming user.profileImageUrl is a direct URL to the image
+    // const imageUrl = $(user.profileImageUrl);
+    // console.log("check this"+imageUrl);
 
-    res.contentType(user.profile.contentType);
-    res.send(user.profile.data);
+    // // Send the image URL directly
+    // res.send(user);
+    res.json(user);
+
   } catch (error) {
-    console.error("Error fetching profile image:", error);
+    console.error("Error fetching and serving profile image:", error);
     res.status(500).send("Internal Server Error");
   }
 });
 
+
+
+/// Route to get all user details
+app.get("/users", async (req, res) => {
+  try {
+    // Fetch all users from the database
+    const users = await User.find();
+
+    // Log details of each user
+    users.forEach((user, index) => {
+      console.log(`User ${index + 1}:`);
+      console.log(`  Name: ${user.username}`);
+      console.log(`  Email: ${user.email}`);
+      console.log(`imageurl: ${user.profileImageUrl}`);
+      console.log("-----------------------------");
+    });
+
+    // Log the total number of users retrieved
+    console.log(`Fetched ${users.length} users from the database`);
+
+    // Send the users as a JSON response
+    res.json(users);
+  } catch (error) {
+    // Log and send an error response if there's an issue
+    console.error("Error fetching user details:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
 
 
 
@@ -574,6 +665,65 @@ io.on("connection", (socket) => {
     socket.profileImageUrl = profileImageUrl; // Set the profile image URL
     updateOnlineUsers();
   });
+
+// code for new message trigger
+const messagesRef = admin.database().ref('messages');
+  // Listen for new child added to 'messages' in Firebase
+  messagesRef.orderByChild('timestamp').on('child_added', (snapshot) => {
+    const newMessage = snapshot.val();
+
+    // Send the new child to the connected clients
+    socket.emit('newMessage', newMessage);
+  });
+
+
+
+
+
+
+// Handle the request for the profile image URL
+socket.on('getProfileImage', async () => {
+  console.log("get profile image called");
+  try {
+    const cookies = socket.request.headers.cookie;
+    if (!cookies) {
+      console.error('No cookies found in the request headers');
+      socket.emit('error', 'No cookies found in the request headers');
+      return;
+    }
+
+    const emailCookie = cookies.split(';').find(cookie => cookie.trim().startsWith('email='));
+    if (!emailCookie) {
+      console.error('Email cookie not found');
+      socket.emit('error', 'Email cookie not found');
+      return;
+    }
+
+    const emailEncoded = emailCookie.split('=')[1].trim(); // Extracting encoded email from the cookie
+    const email = decodeURIComponent(emailEncoded); // Decoding the email
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      console.error('User not found');
+      socket.emit('error', 'User not found');
+      return;
+    }
+
+    console.log("got details");
+
+    // Send the profile image URL back to the client
+    socket.emit('profileImageResponse', user.profileImageUrl);
+  } catch (error) {
+    console.error('Error fetching profile image:', error);
+    socket.emit('error', error.message);
+  }
+});
+
+
+
+
+
 
   socket.on("disconnect", () => {
     console.log("Client has disconnected");
@@ -638,6 +788,7 @@ app.post('/store-chats-realtime', async (req, res) => {
       timestamp: admin.database.ServerValue.TIMESTAMP,
     });
 
+    console.log(profileImageUrl);
     // Send a success response
     res.status(200).send('Message stored successfully.');
   } catch (error) {
@@ -650,11 +801,34 @@ app.post('/store-chats-realtime', async (req, res) => {
 
 
 
+// Define a route to handle the /get-messages request
+app.get('/get-messages', async (req, res) => {
+  try {
+    const messagesSnapshot = await db.ref('messages').orderByChild('timestamp').once('value');
+const messages = [];
+
+messagesSnapshot.forEach((childSnapshot) => {
+  const message = childSnapshot.val();
+  messages.push({
+    id: childSnapshot.key,
+    email: message.email,
+    message: message.message,
+    profileImageUrl: message.profileImageUrl,
+    timestamp: message.timestamp,
+    username: message.username,
+  });
+});
+
+console.log(messages);
 
 
-
-
-
+    // Send the messages as JSON response
+    res.json(messages);
+  } catch (error) {
+    console.error('Error fetching messages:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
 
 
 

@@ -134,6 +134,24 @@ a:hover {
       // Submit the form
       this.submit();
   });
+  
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+<script>
+  const socket = io();
+  // Emit a request to the server to get the profile image URL
+socket.emit('getProfileImage');
+socket.on('profileImageResponse', (profileImageUrl) => {
+  console.log("received back response from socket");
+  try {
+    
+const actualprofileimage = `https://storage.googleapis.com/realtime-group-discussion.appspot.com/`+profileImageUrl;
+console.log('Image URL received from server:', actualprofileimage);
+localStorage.setItem("actualprofileimage", actualprofileimage);
+} catch (error) {
+    console.error('Error displaying profile image:', error);
+  }
+});
 </script>
 </body>
 </html>

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Real-Time Group Discussion</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+    }
+
+    input[type="text"] {
+      width: 60%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 0px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button {
+      padding: 10px 20px;
+      border-radius: 7px;
+      background-color: aqua;
+    }
+
+    #messageContainer {
+      margin-top: 20px;
+      padding: 20px;
+      max-height: 76vh;
+      overflow-y: auto;
+      width: 80%;
+      background-color: rgb(201, 200, 200);
+
+    }
+    #chatContainer{
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+    }
+    .message.show {
+      animation: showMessage 0.3s ease-out;
+    }
+
+    @keyframes showMessage {
+      0% {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .message:not(:last-child) {
+      margin-bottom: 20px;
+    }
+
+    /* Add more classes and corresponding colors for additional users */
+.user-example1 {
+  background-color: #e1bcbc;
+}
+
+.user-example2 {
+  background-color: #17d891;
+}
+
+/* Add more classes and corresponding background colors for additional users */
+
+.message {
+  margin-bottom: 10px;
+  position: relative;
+}
+
+.message .name {
+  font-weight: bold;
+}
+
+
+
+
+
+
+
+
+
+.message .replied-message {
+  background-color: #f9f9f9;
+  padding: 5px;
+  margin-top: 5px;
+  border-radius: 5px;
+}
+
+/* Rest of the existing styles */
+
+
+    /* Add more classes and corresponding colors for additional users */
+
+
+  
+
+    .message .timestamp {
+      font-size: 12px;
+      color: #888;
+      margin-left: 10px;
+    }
+
+    .message .content {
+      margin-top: 5px;
+    }
+
+    .message .profile-photo {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-right: 10px;
+    }
+
+    .message .reply-icon {
+      position: absolute;
+      top: 50%;
+      right: 0;
+      transform: translateY(-50%);
+      color: #888;
+      cursor: pointer;
+    }
+
+    .heading {
+      text-align: center;
+    }
+    .bottomtyper{
+      position: fixed;
+      bottom: 0;
+      height: 100px;
+      width: 100%;
+      background-color: #989595;
+      padding: 10px;
+      text-align: center;
+    }
+    #onlineusers{
+      position: fixed;
+      right: 0;
+      top: 0;
+      width: 20%;
+      height: 100%;
+      background-color: #989595;
+      text-align: center;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1 class="heading">We Discuss</h1>
+  <div id="nameContainer">
+    <label for="nameInput">Your Name:</label>
+    <input type="text" id="nameInput" placeholder="Enter your name...">
+    <br>
+    <label for="photoInput">Profile Photo URL:</label>
+    <input type="text" id="photoInput" placeholder="Enter your photo URL...">
+    <button id="setNameButton">Set Name and Photo</button>
+  </div>
+
+  <div id="chatContainer" style="display: none;">
+   
+    <div id="messageContainer"></div>
+    <div id="onlineusers"></div>
+  </div>
+
+  <div class="bottomtyper">
+    <input type="text" id="messageInput" placeholder="Type your message...">
+    <button id="sendButton">Send</button>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script>
+    var firebaseConfig = {
+      // Your Firebase project's configuration
+      apiKey: "AIzaSyCPRBX23loTMM8zRtUI4_TiCZ6yhVTvkgc",
+  authDomain: "realtime-group-discussion.firebaseapp.com",
+  databaseURL: "https://realtime-group-discussion-default-rtdb.firebaseio.com",
+  projectId: "realtime-group-discussion",
+  storageBucket: "realtime-group-discussion.appspot.com",
+  messagingSenderId: "297395929587",
+  appId: "1:297395929587:web:21beac58c3a94e46505286"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+
+    var db = firebase.database();
+
+    var nameInput = document.getElementById('nameInput');
+    var photoInput = document.getElementById('photoInput');
+    var setNameButton = document.getElementById('setNameButton');
+    var chatContainer = document.getElementById('chatContainer');
+    var messageInput = document.getElementById('messageInput');
+    var sendButton = document.getElementById('sendButton');
+    var messageContainer = document.getElementById('messageContainer');
+
+
+
+    messageInput.addEventListener('keydown', function(event) {
+  if (event.keyCode === 13) {
+    event.preventDefault();
+    var message = messageInput.value.trim();
+    if (message !== '') {
+      sendMessage(message);
+      messageInput.value = '';
+    }
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+    setNameButton.addEventListener('click', function() {
+      var name = nameInput.value.trim();
+      var photoUrl = photoInput.value.trim();
+      if (name !== '') {
+        setNameAndPhoto(name, photoUrl);
+        nameInput.value = '';
+        photoInput.value = '';
+        showChat();
+      }
+    });
+
+    sendButton.addEventListener('click', function() {
+      var message = messageInput.value.trim();
+      if (message !== '') {
+        sendMessage(message);
+        messageInput.value = '';
+      }
+    });
+
+    function setNameAndPhoto(name, photoUrl) {
+      localStorage.setItem('userName', name);
+      localStorage.setItem('userPhotoUrl', photoUrl);
+    }
+
+    function getName() {
+      var name = localStorage.getItem('userName');
+      return name ? name : '';
+    }
+
+    function getPhotoUrl() {
+      var photoUrl = localStorage.getItem('userPhotoUrl');
+      return photoUrl ? photoUrl : '';
+    }
+
+    function showChat() {
+      var userName = getName();
+      if (userName !== '') {
+        document.getElementById('nameContainer').style.display = 'none';
+        document.getElementById('chatContainer').style.display = 'block';
+        document.getElementById('messageInput').focus();
+      }
+    }
+
+    function sendMessage(message) {
+      var userName = getName();
+      var photoUrl = getPhotoUrl();
+      var messageData = {
+        name: userName,
+        photoUrl: photoUrl,
+        text: message,
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+      };
+      db.ref('messages').push(messageData)
+        .then(function() {
+          console.log('Message sent successfully');
+        })
+        .catch(function(error) {
+          console.error('Error sending message:', error);
+        });
+    }
+
+    function displayMessage(snapshot) {
+  var data = snapshot.val();
+  var name = data.name;
+  var photoUrl = data.photoUrl;
+  var message = data.text;
+  var timestamp = formatTimestamp(data.timestamp);
+
+  var repliedMessageId = '';
+  var repliedMessageContent = '';
+
+  if (message.includes('@')) {
+    var replyRegex = /@([a-zA-Z0-9-]+)\s/;
+    var replyMatches = message.match(replyRegex);
+    if (replyMatches && replyMatches.length > 1) {
+      var repliedUserName = replyMatches[1];
+      var repliedMessageElement = document.querySelector('.message.user-' + repliedUserName);
+      if (repliedMessageElement) {
+        repliedMessageId = repliedMessageElement.getAttribute('data-id');
+        repliedMessageContent = repliedMessageElement.querySelector('.content').textContent;
+      }
+    }
+  }
+
+  var messageElement = document.createElement('div');
+  messageElement.classList.add('message');
+  messageElement.classList.add(getUserClass(name));
+  messageElement.setAttribute('data-id', snapshot.key);
+  messageElement.innerHTML = '<img src="' + photoUrl + '" class="profile-photo">' +
+    '<span class="name">' + name + ':</span> <span class="content">' + message + '</span><span class="timestamp">' + timestamp + '</span><i class="material-icons reply-icon">reply</i>';
+
+  if (repliedMessageId !== '') {
+    var repliedMessageElement = document.createElement('div');
+    repliedMessageElement.classList.add('replied-message');
+    repliedMessageElement.innerHTML = '<span class="replied-by">Replied to:</span> <span class="replied-content">' + repliedMessageContent + '</span>';
+    messageElement.appendChild(repliedMessageElement);
+  }
+
+  messageContainer.appendChild(messageElement);
+  messageContainer.scrollTop = messageContainer.scrollHeight;
+  setTimeout(function() {
+    messageElement.classList.add('show');
+  }, 10);
+
+  var replyIcon = messageElement.querySelector('.reply-icon');
+  replyIcon.addEventListener('click', function() {
+    messageInput.value = '@' + name + ' ';
+    messageInput.focus();
+  });
+}
+
+
+    function getUserClass(name) {
+      // Generate a unique CSS class based on the user's name
+      var sanitized = name.toLowerCase().replace(/\s/g, '-').replace(/[^a-z0-9-]/g, '');
+      return 'user-' + sanitized;
+    }
+
+    function formatTimestamp(timestamp) {
+      var date = new Date(timestamp);
+      var hours = date.getHours();
+      var minutes = date.getMinutes();
+      var seconds = date.getSeconds();
+      hours = (hours < 10) ? '0' + hours : hours;
+      minutes = (minutes < 10) ? '0' + minutes : minutes;
+      seconds = (seconds < 10) ? '0' + seconds : seconds;
+      return hours + ':' + minutes + ':' + seconds;
+    }
+
+    db.ref('messages').orderByChild('timestamp').on('child_added', function(snapshot) {
+      displayMessage(snapshot);
+    });
+
+    // Check if user's name is already set and show the chat if it is
+    showChat();
+  </script>
+</body>
+</html>
+
+
+<form class="msger-inputarea" action="/store-chats-realtime" method="post">
+  <!-- Hidden input fields -->
+  <input type="hidden" name="email" id="hiddenEmail" value="" required>
+  <input type="hidden" name="username" id="hiddenUsername" value="" required>
+  <input type="hidden" name="profileImageUrl" id="hiddenProfileImageUrl" value="" required>
+
+  <!-- Message input field -->
+  <input type="text" class="msger-input" placeholder="Enter your message..." name="message" required>
+
+  <!-- Send button -->
+  <button type="submit" class="msger-send-btn">Send</button>
+</form>
