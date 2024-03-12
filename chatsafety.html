@@ -1,0 +1,762 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group Chat</title>
+    <style>
+        body {
+            font-family: Helvetica, sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        .msger-container {
+            flex: 1;
+            display: flex;
+        }
+        input[type="text"] {
+      width: 60%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 0px solid #ccc;
+      border-radius: 5px;
+    }
+
+        .msger {
+            flex: 1;
+            display: flex;
+            flex-flow: column wrap;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            background: #fff;
+            box-shadow: 0 15px 15px -5px rgba(0, 0, 0, 0.2);
+        }
+
+        .msger-header {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 2px solid #ddd;
+            background: #eee;
+            color: #666;
+        }
+
+        .msger-chat {
+            flex: 1;
+            display: flex;
+            max-height: 80%;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 10px;
+            background-color: #17d891;
+        }
+
+        .msg {
+            display: flex;
+            align-items: flex-end;
+            margin-bottom: 10px;
+        }
+
+        .msg-img {
+            width: 50px;
+            height: 50px;
+            margin-right: 10px;
+            background: #ddd;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: cover;
+            border-radius: 50%;
+        }
+
+        .msg-bubble {
+    max-width: 89%; /* Set to 100% to allow flexibility */
+    word-wrap: break-word; /* Allow long words to be broken and wrap to the next line */
+    padding: 15px;
+    border-radius: 15px;
+    background: #ececec;
+}
+
+
+        .msg-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .msg-info-name {
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .msg-info-time {
+            font-size: 0.85em;
+        }
+
+        .msger-inputarea {
+            display: flex;
+            padding: 10px;
+            border-top: 2px solid #ddd;
+            background: #eee;
+        }
+
+        .msger-inputarea * {
+            padding: 10px;
+            border: none;
+            border-radius: 3px;
+            font-size: 1em;
+        }
+
+        .msger-input {
+            flex: 1;
+            background: #ddd;
+        }
+
+        .msger-send-btn {
+            margin-left: 10px;
+            background: rgb(0, 196, 65);
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.23s;
+        }
+
+        .msger-send-btn:hover {
+            background: rgb(0, 180, 50);
+        }
+
+        #onlineUsersContainer {
+            width: 20%;
+            background-color: #333;
+            color: white;
+            overflow-y: auto;
+            padding: 10px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        #onlineUsersContainer h2 {
+            margin-bottom: 10px;
+        }
+        .online-user {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .profile-image {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .username {
+            font-weight: bold;
+            color: #333;
+        }
+        .online-count{
+            color: rgb(103, 233, 103);
+        }
+        .no-online-users{
+            color: red;
+        }
+        button {
+      padding: 10px 20px;
+      border-radius: 7px;
+      background-color: aqua;
+    }
+
+    #messageContainer {
+      margin-top: 20px;
+      padding: 20px;
+      max-height: 76vh;
+      overflow-y: auto;
+      width: 80%;
+      background-color: rgb(201, 200, 200);
+
+    }
+    #chatContainer{
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+    }
+    
+    .message.show {
+      animation: showMessage 0.3s ease-out;
+    }
+
+    @keyframes showMessage {
+      0% {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .message:not(:last-child) {
+      margin-bottom: 20px;
+    }
+
+    /* Add more classes and corresponding colors for additional users */
+.user-example1 {
+  background-color: #e1bcbc;
+}
+
+.user-example2 {
+  background-color: #17d891;
+}
+
+/* Add more classes and corresponding background colors for additional users */
+
+.message {
+  margin-bottom: 10px;
+  position: relative;
+}
+
+.message .name {
+  font-weight: bold;
+}
+
+
+
+
+
+
+
+
+
+.message .replied-message {
+  background-color: #f9f9f9;
+  padding: 5px;
+  margin-top: 5px;
+  border-radius: 5px;
+}
+
+/* Rest of the existing styles */
+
+
+    /* Add more classes and corresponding colors for additional users */
+
+
+  
+
+    .message .timestamp {
+      font-size: 12px;
+      color: #888;
+      margin-left: 10px;
+    }
+
+    .message .content {
+      margin-top: 5px;
+    }
+
+    .message .profile-photo {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-right: 10px;
+    }
+
+    .message .reply-icon {
+      position: absolute;
+      top: 50%;
+      right: 0;
+      transform: translateY(-50%);
+      color: #888;
+      cursor: pointer;
+    }
+
+    .heading {
+      text-align: center;
+    }
+    .bottomtyper{
+      position: fixed;
+      bottom: 0;
+      height: 70px;
+      display: flex;
+      justify-content: center;
+      width: 78%;
+      align-items: center;
+      background-color: #989595;
+      padding: 10px;
+      text-align: center;
+    }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="msger-container">
+            <section class="msger">
+                <header class="msger-header">
+                    <div class="msger-header-title">
+                        <i class="fas fa-comment-alt"></i> RealTime GD
+                    </div>
+                    <div class="msger-header-options">
+                        <span><i class="fas fa-cog"></i></span>
+                    </div>
+                </header>
+
+                <main class="msger-chat">
+                   
+
+                    
+
+                    <div class="msg left-msg" id="userMessage">
+                        <div class="msg-img" class="profileImage"></div>
+                        <div class="msg-bubble">
+                            <div class="msg-info">
+                                <div class="msg-info-name">Sushanth</div>
+                                <div class="msg-info-time">12:45</div>
+                            </div>
+                            <div class="msg-text">
+                                Hi, welcome 😄
+                            </div>
+                        </div>
+                    </div>
+                    <div class="msg left-msg" id="userMessage">
+                      <div class="msg-img" class="profileImage"></div>
+                      <div class="msg-bubble">
+                          <div class="msg-info">
+                              <div class="msg-info-name">Sushanth</div>
+                              <div class="msg-info-time">12:45</div>
+                          </div>
+                          <div class="msg-text">
+                              Hi, welcome 2 😄
+                          </div>
+                      </div>
+                  </div>
+
+                    <div id="chatContainer" style="display: none;">
+
+
+
+                </main>
+
+                <div class="bottomtyper">
+                  <input type="text" id="messageInput" placeholder="Type your message...">
+                  <input type="hidden" name="email" id="hiddenEmail" value="" required>
+                  <input type="hidden" name="username" id="hiddenUsername" value="" required>
+                  <input type="hidden" name="profileImageUrl" id="hiddenProfileImageUrl" value="" required>
+
+                  <button id="sendButton">Send</button>
+                </div>
+              
+
+            </section>
+        </div>
+
+        <div id="onlineUsersContainer">
+            <h2>Online Users</h2>
+            <!-- Online users will be added dynamically here -->
+           
+
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', async function () {
+  const socket = io();
+  const profileImageElement = document.getElementsByClassName('profileImage');
+  const onlineUsersContainer = document.getElementById('onlineUsersContainer');
+  
+  socket.emit('getProfileImage');
+socket.on('profileImageResponse', (profileImageUrl) => {
+  console.log("received back response from socket");
+  try {
+  
+const actualprofileimage = `https://storage.googleapis.com/realtime-group-discussion.appspot.com/`+profileImageUrl;
+console.log('Image URL received from server:', actualprofileimage);
+localStorage.setItem("actualprofileimage", actualprofileimage);
+} catch (error) {
+    console.error('Error displaying profile image:', error);
+  }
+});
+
+  let imageUrl;
+//   try {
+//   const response = await fetch('/profileImage');
+//   console.log(response);
+//   if (!response.ok) {
+//     throw new Error(`Error fetching profile image: ${response.status}`);
+//   }
+
+//   // Get the image URL directly
+//   profileImageUrl = response.url;
+
+//   console.log('hey '+ profileImageUrl);
+
+//   // Display the image using the URL
+//   profileImageElement.style.backgroundImage = `$url(profileImageUrl)`;
+// } catch (error) {
+//   console.error('Error fetching and displaying profile image:', error);
+// } 
+
+
+
+
+
+
+
+
+
+
+const username = decodeURIComponent(document.cookie.split('; ')
+  .find(row => row.startsWith('username='))
+  .split('=')[1]);
+
+  const email = decodeURIComponent(document.cookie.split('; ')
+    .find(row => row.startsWith('email='))
+    .split('=')[1]);
+
+
+const actualprofileimageforonline = localStorage.getItem("actualprofileimage");
+
+document.getElementById('hiddenUsername').value = username;
+document.getElementById('hiddenEmail').value = email;
+document.getElementById('hiddenProfileImageUrl').value = actualprofileimageforonline;
+
+
+socket.emit('set username', username);
+socket.emit('set profile image', actualprofileimageforonline);
+
+
+socket.on('update online users', (onlineUsers) => {
+  const usersList = onlineUsers.map(user => `
+    <div class="online-user">
+      <img src="${user.profileImageUrl}" alt="Profile Image" class="profile-image">
+      <h3>${user.username}</h3>
+    </div>
+  `).join('');
+  const countClass = onlineUsers.length > 0 ? 'online-count' : 'no-online-users';
+
+  onlineUsersContainer.innerHTML = `<h2 class="${countClass}">Online Users (${onlineUsers.length})</h2>${usersList}`;
+});
+
+
+function islideforyou(className) {
+  const element = document.querySelector(className);
+  if (element) {
+    element.scrollTop = element.scrollHeight;
+  } else {
+    console.error('Element not found with class:', className);
+  }
+}
+
+
+
+
+  socket.on('newMessage', (newMessage) => {
+    console.log('Received new message:', newMessage);
+    iwillappend(newMessage)
+    islideforyou('.msger-chat');
+    // Handle the new message as needed
+  });
+
+
+
+
+
+
+
+
+  var chatContainer = document.getElementById('chatContainer');
+  var messageInput = document.getElementById('messageInput');
+  var sendButton = document.getElementById('sendButton');
+  var messageContainer = document.getElementById('messageContainer');
+
+  
+
+  const username2 = decodeURIComponent(document.cookie.split('; ')
+    .find(row => row.startsWith('username='))
+    .split('=')[1]);
+
+  messageInput.addEventListener('keydown', function(event) {
+    if (event.keyCode === 13) {
+      event.preventDefault();
+      var message = messageInput.value.trim();
+      if (message !== '') {
+        sendMessageToServer(message, email, username2, actualprofileimageforonline);
+        displayallmessages();
+        messageInput.value = '';
+
+      }
+    }
+  });
+
+  function sendMessageToServer(message, email, username, actualprofileimageforonline) {
+    const serverURL = '/store-chats-realtime';
+    
+    const requestBody = {
+      email: email,
+      username: username,
+      message: message,
+      profileImageUrl: actualprofileimageforonline
+    };
+
+    fetch(serverURL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log('Message sent successfully:', data);
+      // You can handle the response from the server as needed
+    })
+    .catch(error => {
+      console.error('Error sending message:', error);
+    });
+  }
+
+  function displayallmessages(){
+
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+// function displayMessage(snapshot) {
+//   var data = snapshot.val();
+//   var name = data.name;
+//   var photoUrl = data.photoUrl;
+//   var message = data.text;
+//   var timestamp = formatTimestamp(data.timestamp);
+
+//   var repliedMessageId = '';
+//   var repliedMessageContent = '';
+
+//   if (message.includes('@')) {
+//     var replyRegex = /@([a-zA-Z0-9-]+)\s/;
+//     var replyMatches = message.match(replyRegex);
+//     if (replyMatches && replyMatches.length > 1) {
+//       var repliedUserName = replyMatches[1];
+//       var repliedMessageElement = document.querySelector('.message.user-' + repliedUserName);
+//       if (repliedMessageElement) {
+//         repliedMessageId = repliedMessageElement.getAttribute('data-id');
+//         repliedMessageContent = repliedMessageElement.querySelector('.content').textContent;
+//       }
+//     }
+//   }
+
+//   var messageElement = document.createElement('div');
+//   messageElement.classList.add('message');
+//   messageElement.classList.add(getUserClass(name));
+//   messageElement.setAttribute('data-id', snapshot.key);
+//   messageElement.innerHTML = '<img src="' + photoUrl + '" class="profile-photo">' +
+//     '<span class="name">' + name + ':</span> <span class="content">' + message + '</span><span class="timestamp">' + timestamp + '</span><i class="material-icons reply-icon">reply</i>';
+
+//   if (repliedMessageId !== '') {
+//     var repliedMessageElement = document.createElement('div');
+//     repliedMessageElement.classList.add('replied-message');
+//     repliedMessageElement.innerHTML = '<span class="replied-by">Replied to:</span> <span class="replied-content">' + repliedMessageContent + '</span>';
+//     messageElement.appendChild(repliedMessageElement);
+//   }
+
+//   messageContainer.appendChild(messageElement);
+//   messageContainer.scrollTop = messageContainer.scrollHeight;
+//   setTimeout(function() {
+//     messageElement.classList.add('show');
+//   }, 10);
+
+//   var replyIcon = messageElement.querySelector('.reply-icon');
+//   replyIcon.addEventListener('click', function() {
+//     messageInput.value = '@' + name + ' ';
+//     messageInput.focus();
+//   });
+// }
+
+
+  
+
+    function formatTimestamp(timestamp) {
+      var date = new Date(timestamp);
+      var hours = date.getHours();
+      var minutes = date.getMinutes();
+      var seconds = date.getSeconds();
+      hours = (hours < 10) ? '0' + hours : hours;
+      minutes = (minutes < 10) ? '0' + minutes : minutes;
+      seconds = (seconds < 10) ? '0' + seconds : seconds;
+      return hours + ':' + minutes + ':' + seconds;
+    }
+
+    // db.ref('messages').orderByChild('timestamp').on('child_added', function(snapshot) {
+    //   displayMessage(snapshot);
+    // });
+
+    // Check if user's name is already set and show the chat if it is
+    // showChat();
+
+    function displayMessage(message) {
+  // Create a new div for the message
+  const msgDiv = document.createElement('div');
+  msgDiv.classList.add('msg', 'left-msg');
+  msgDiv.id = 'userMessage';
+
+  // Create a div for the message image
+  const msgImgDiv = document.createElement('div');
+  msgImgDiv.classList.add('msg-img', 'profileImage');
+  // Set the background image using the profileImageUrl
+  msgImgDiv.style.backgroundImage = `url(${message.profileImageUrl})`;
+  msgDiv.appendChild(msgImgDiv);
+
+  // Create a div for the message bubble
+  const msgBubbleDiv = document.createElement('div');
+  msgBubbleDiv.classList.add('msg-bubble');
+  msgDiv.appendChild(msgBubbleDiv);
+
+  // Create a div for the message info
+  const msgInfoDiv = document.createElement('div');
+  msgInfoDiv.classList.add('msg-info');
+  msgBubbleDiv.appendChild(msgInfoDiv);
+
+  // Create a div for the message username
+  const msgInfoNameDiv = document.createElement('div');
+  msgInfoNameDiv.classList.add('msg-info-name');
+  msgInfoNameDiv.textContent = message.username;
+  msgInfoDiv.appendChild(msgInfoNameDiv);
+
+  // Create a div for the message timestamp
+  const msgInfoTimeDiv = document.createElement('div');
+  msgInfoTimeDiv.classList.add('msg-info-time');
+ timestampformatted= formatTimestamp(message.timestamp);
+  msgInfoTimeDiv.textContent = timestampformatted;
+  msgInfoDiv.appendChild(msgInfoTimeDiv);
+
+  // Create a div for the message text
+  const msgTextDiv = document.createElement('div');
+  msgTextDiv.classList.add('msg-text');
+  msgTextDiv.textContent = message.message;
+  msgBubbleDiv.appendChild(msgTextDiv);
+
+  // Append the message div to the .msger-chat container
+  const chatContainer = document.querySelector('.msger-chat');
+  chatContainer.appendChild(msgDiv);
+}
+
+
+function iwillappend(message) {
+  // Create a new div for the message
+  const msgDiv = document.createElement('div');
+  msgDiv.classList.add('msg', 'left-msg');
+  msgDiv.id = 'userMessage';
+
+  // Create a div for the message image
+  const msgImgDiv = document.createElement('div');
+  msgImgDiv.classList.add('msg-img', 'profileImage');
+  // Set the background image using the profileImageUrl
+  msgImgDiv.style.backgroundImage = `url(${message.profileImageUrl})`;
+  msgDiv.appendChild(msgImgDiv);
+
+  // Create a div for the message bubble
+  const msgBubbleDiv = document.createElement('div');
+  msgBubbleDiv.classList.add('msg-bubble');
+  msgDiv.appendChild(msgBubbleDiv);
+
+  // Create a div for the message info
+  const msgInfoDiv = document.createElement('div');
+  msgInfoDiv.classList.add('msg-info');
+  msgBubbleDiv.appendChild(msgInfoDiv);
+
+  // Create a div for the message username
+  const msgInfoNameDiv = document.createElement('div');
+  msgInfoNameDiv.classList.add('msg-info-name');
+  msgInfoNameDiv.textContent = message.username;
+  msgInfoDiv.appendChild(msgInfoNameDiv);
+
+  // Create a div for the message timestamp
+  const msgInfoTimeDiv = document.createElement('div');
+  msgInfoTimeDiv.classList.add('msg-info-time');
+  // Format the timestamp
+  const timestampFormatted = formatTimestamp(message.timestamp);
+  msgInfoTimeDiv.textContent = timestampFormatted;
+  msgInfoDiv.appendChild(msgInfoTimeDiv);
+
+  // Create a div for the message text
+  const msgTextDiv = document.createElement('div');
+  msgTextDiv.classList.add('msg-text');
+  msgTextDiv.textContent = message.message;
+  msgBubbleDiv.appendChild(msgTextDiv);
+
+  // Append the message div to the .msger-chat container
+  const chatContainer = document.querySelector('.msger-chat');
+  chatContainer.appendChild(msgDiv);
+
+  
+}
+
+
+
+
+
+
+
+
+
+
+
+
+document.addEventListener('DOMContentLoaded', function () {
+  // Your existing code...
+
+  // Fetch initial messages
+  fetch('/get-messages')
+    .then(response => response.json())
+    .then(messages => {
+      // Display initial messages
+      messages.forEach(message => {
+        displayMessage(message);
+      });
+    })
+    .catch(error => {
+      console.error('Error fetching messages:', error);
+    });
+});
+
+
+      </script>
+     
+
+
+<script>
+  // const socket = io();
+  // Emit a request to the server to get the profile image URL
+
+</script>
+</body>
+</html>
