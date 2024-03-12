@@ -325,7 +325,7 @@
                               <div class="msg-info-time">12:45</div>
                           </div>
                           <div class="msg-text">
-                              Hi, welcome 😄
+                              Hi, welcome 2 😄
                           </div>
                       </div>
                   </div>
@@ -344,16 +344,7 @@
 
                   <button id="sendButton">Send</button>
                 </div>
-                
-
-                
-<form class="msger-inputarea" action="/store-chats-realtime" method="post">
-  <!-- Hidden input fields -->
-  <!-- Message input field -->
-  <input type="text" class="msger-input" placeholder="Enter your message..." name="message" required>
-  <!-- Send button -->
-  <button type="submit" class="msger-send-btn">Send</button>
-</form>
+              
 
             </section>
         </div>
@@ -376,9 +367,18 @@
   const profileImageElement = document.getElementsByClassName('profileImage');
   const onlineUsersContainer = document.getElementById('onlineUsersContainer');
   
-
-
-
+  socket.emit('getProfileImage');
+socket.on('profileImageResponse', (profileImageUrl) => {
+  console.log("received back response from socket");
+  try {
+  
+const actualprofileimage = `https://storage.googleapis.com/realtime-group-discussion.appspot.com/`+profileImageUrl;
+console.log('Image URL received from server:', actualprofileimage);
+localStorage.setItem("actualprofileimage", actualprofileimage);
+} catch (error) {
+    console.error('Error displaying profile image:', error);
+  }
+});
 
   let imageUrl;
 //   try {
@@ -412,11 +412,21 @@ const username = decodeURIComponent(document.cookie.split('; ')
   .find(row => row.startsWith('username='))
   .split('=')[1]);
 
-document.getElementById('hiddenUsername').value = username;
-socket.emit('set username', username);
-socket.emit('set profile image', imageUrl);
+  const email = decodeURIComponent(document.cookie.split('; ')
+    .find(row => row.startsWith('email='))
+    .split('=')[1]);
 
-document.getElementById('hiddenProfileImageUrl').value = imageUrl;
+
+const actualprofileimageforonline = localStorage.getItem("actualprofileimage");
+
+document.getElementById('hiddenUsername').value = username;
+document.getElementById('hiddenEmail').value = email;
+document.getElementById('hiddenProfileImageUrl').value = actualprofileimageforonline;
+
+
+socket.emit('set username', username);
+socket.emit('set profile image', actualprofileimageforonline);
+
 
 socket.on('update online users', (onlineUsers) => {
   const usersList = onlineUsers.map(user => `
@@ -437,6 +447,7 @@ socket.on('update online users', (onlineUsers) => {
 
   socket.on('newMessage', (newMessage) => {
     console.log('Received new message:', newMessage);
+    iwillappend(newMessage)
     // Handle the new message as needed
   });
 
@@ -452,9 +463,7 @@ socket.on('update online users', (onlineUsers) => {
   var sendButton = document.getElementById('sendButton');
   var messageContainer = document.getElementById('messageContainer');
 
-  const email = decodeURIComponent(document.cookie.split('; ')
-    .find(row => row.startsWith('email='))
-    .split('=')[1]);
+  
 
   const username2 = decodeURIComponent(document.cookie.split('; ')
     .find(row => row.startsWith('username='))
@@ -465,21 +474,21 @@ socket.on('update online users', (onlineUsers) => {
       event.preventDefault();
       var message = messageInput.value.trim();
       if (message !== '') {
-        sendMessageToServer(message, email, username2, imageUrl);
+        sendMessageToServer(message, email, username2, actualprofileimageforonline);
         displayallmessages();
         messageInput.value = '';
       }
     }
   });
 
-  function sendMessageToServer(message, email, username, imageUrl) {
+  function sendMessageToServer(message, email, username, actualprofileimageforonline) {
     const serverURL = '/store-chats-realtime';
     
     const requestBody = {
       email: email,
       username: username,
       message: message,
-      profileImageUrl: imageUrl
+      profileImageUrl: actualprofileimageforonline
     };
 
     fetch(serverURL, {
@@ -520,62 +529,58 @@ socket.on('update online users', (onlineUsers) => {
 
 
 
-function displayMessage(snapshot) {
-  var data = snapshot.val();
-  var name = data.name;
-  var photoUrl = data.photoUrl;
-  var message = data.text;
-  var timestamp = formatTimestamp(data.timestamp);
+// function displayMessage(snapshot) {
+//   var data = snapshot.val();
+//   var name = data.name;
+//   var photoUrl = data.photoUrl;
+//   var message = data.text;
+//   var timestamp = formatTimestamp(data.timestamp);
 
-  var repliedMessageId = '';
-  var repliedMessageContent = '';
+//   var repliedMessageId = '';
+//   var repliedMessageContent = '';
 
-  if (message.includes('@')) {
-    var replyRegex = /@([a-zA-Z0-9-]+)\s/;
-    var replyMatches = message.match(replyRegex);
-    if (replyMatches && replyMatches.length > 1) {
-      var repliedUserName = replyMatches[1];
-      var repliedMessageElement = document.querySelector('.message.user-' + repliedUserName);
-      if (repliedMessageElement) {
-        repliedMessageId = repliedMessageElement.getAttribute('data-id');
-        repliedMessageContent = repliedMessageElement.querySelector('.content').textContent;
-      }
-    }
-  }
+//   if (message.includes('@')) {
+//     var replyRegex = /@([a-zA-Z0-9-]+)\s/;
+//     var replyMatches = message.match(replyRegex);
+//     if (replyMatches && replyMatches.length > 1) {
+//       var repliedUserName = replyMatches[1];
+//       var repliedMessageElement = document.querySelector('.message.user-' + repliedUserName);
+//       if (repliedMessageElement) {
+//         repliedMessageId = repliedMessageElement.getAttribute('data-id');
+//         repliedMessageContent = repliedMessageElement.querySelector('.content').textContent;
+//       }
+//     }
+//   }
 
-  var messageElement = document.createElement('div');
-  messageElement.classList.add('message');
-  messageElement.classList.add(getUserClass(name));
-  messageElement.setAttribute('data-id', snapshot.key);
-  messageElement.innerHTML = '<img src="' + photoUrl + '" class="profile-photo">' +
-    '<span class="name">' + name + ':</span> <span class="content">' + message + '</span><span class="timestamp">' + timestamp + '</span><i class="material-icons reply-icon">reply</i>';
+//   var messageElement = document.createElement('div');
+//   messageElement.classList.add('message');
+//   messageElement.classList.add(getUserClass(name));
+//   messageElement.setAttribute('data-id', snapshot.key);
+//   messageElement.innerHTML = '<img src="' + photoUrl + '" class="profile-photo">' +
+//     '<span class="name">' + name + ':</span> <span class="content">' + message + '</span><span class="timestamp">' + timestamp + '</span><i class="material-icons reply-icon">reply</i>';
 
-  if (repliedMessageId !== '') {
-    var repliedMessageElement = document.createElement('div');
-    repliedMessageElement.classList.add('replied-message');
-    repliedMessageElement.innerHTML = '<span class="replied-by">Replied to:</span> <span class="replied-content">' + repliedMessageContent + '</span>';
-    messageElement.appendChild(repliedMessageElement);
-  }
+//   if (repliedMessageId !== '') {
+//     var repliedMessageElement = document.createElement('div');
+//     repliedMessageElement.classList.add('replied-message');
+//     repliedMessageElement.innerHTML = '<span class="replied-by">Replied to:</span> <span class="replied-content">' + repliedMessageContent + '</span>';
+//     messageElement.appendChild(repliedMessageElement);
+//   }
 
-  messageContainer.appendChild(messageElement);
-  messageContainer.scrollTop = messageContainer.scrollHeight;
-  setTimeout(function() {
-    messageElement.classList.add('show');
-  }, 10);
+//   messageContainer.appendChild(messageElement);
+//   messageContainer.scrollTop = messageContainer.scrollHeight;
+//   setTimeout(function() {
+//     messageElement.classList.add('show');
+//   }, 10);
 
-  var replyIcon = messageElement.querySelector('.reply-icon');
-  replyIcon.addEventListener('click', function() {
-    messageInput.value = '@' + name + ' ';
-    messageInput.focus();
-  });
-}
+//   var replyIcon = messageElement.querySelector('.reply-icon');
+//   replyIcon.addEventListener('click', function() {
+//     messageInput.value = '@' + name + ' ';
+//     messageInput.focus();
+//   });
+// }
 
 
-    function getUserClass(name) {
-      // Generate a unique CSS class based on the user's name
-      var sanitized = name.toLowerCase().replace(/\s/g, '-').replace(/[^a-z0-9-]/g, '');
-      return 'user-' + sanitized;
-    }
+  
 
     function formatTimestamp(timestamp) {
       var date = new Date(timestamp);
@@ -595,18 +600,110 @@ function displayMessage(snapshot) {
     // Check if user's name is already set and show the chat if it is
     // showChat();
 
-
     function displayMessage(message) {
-  console.log('Message ID:', message.id);
-  console.log('Name:', message.username);
-  console.log('Photo URL:', message. profileImageUrl);
-  console.log('Text:', message. message);
-  console.log('Timestamp:', message.timestamp);
-  // console.log(message);
+  // Create a new div for the message
+  const msgDiv = document.createElement('div');
+  msgDiv.classList.add('msg', 'left-msg');
+  msgDiv.id = 'userMessage';
 
-  // Implement your logic to display messages on the client
-  // For example, you can create HTML elements and append them to a container
+  // Create a div for the message image
+  const msgImgDiv = document.createElement('div');
+  msgImgDiv.classList.add('msg-img', 'profileImage');
+  // Set the background image using the profileImageUrl
+  msgImgDiv.style.backgroundImage = `url(${message.profileImageUrl})`;
+  msgDiv.appendChild(msgImgDiv);
+
+  // Create a div for the message bubble
+  const msgBubbleDiv = document.createElement('div');
+  msgBubbleDiv.classList.add('msg-bubble');
+  msgDiv.appendChild(msgBubbleDiv);
+
+  // Create a div for the message info
+  const msgInfoDiv = document.createElement('div');
+  msgInfoDiv.classList.add('msg-info');
+  msgBubbleDiv.appendChild(msgInfoDiv);
+
+  // Create a div for the message username
+  const msgInfoNameDiv = document.createElement('div');
+  msgInfoNameDiv.classList.add('msg-info-name');
+  msgInfoNameDiv.textContent = message.username;
+  msgInfoDiv.appendChild(msgInfoNameDiv);
+
+  // Create a div for the message timestamp
+  const msgInfoTimeDiv = document.createElement('div');
+  msgInfoTimeDiv.classList.add('msg-info-time');
+ timestampformatted= formatTimestamp(message.timestamp);
+  msgInfoTimeDiv.textContent = timestampformatted;
+  msgInfoDiv.appendChild(msgInfoTimeDiv);
+
+  // Create a div for the message text
+  const msgTextDiv = document.createElement('div');
+  msgTextDiv.classList.add('msg-text');
+  msgTextDiv.textContent = message.message;
+  msgBubbleDiv.appendChild(msgTextDiv);
+
+  // Append the message div to the .msger-chat container
+  const chatContainer = document.querySelector('.msger-chat');
+  chatContainer.appendChild(msgDiv);
 }
+
+
+function iwillappend(message) {
+  // Create a new div for the message
+  const msgDiv = document.createElement('div');
+  msgDiv.classList.add('msg', 'left-msg');
+  msgDiv.id = 'userMessage';
+
+  // Create a div for the message image
+  const msgImgDiv = document.createElement('div');
+  msgImgDiv.classList.add('msg-img', 'profileImage');
+  // Set the background image using the profileImageUrl
+  msgImgDiv.style.backgroundImage = `url(${message.profileImageUrl})`;
+  msgDiv.appendChild(msgImgDiv);
+
+  // Create a div for the message bubble
+  const msgBubbleDiv = document.createElement('div');
+  msgBubbleDiv.classList.add('msg-bubble');
+  msgDiv.appendChild(msgBubbleDiv);
+
+  // Create a div for the message info
+  const msgInfoDiv = document.createElement('div');
+  msgInfoDiv.classList.add('msg-info');
+  msgBubbleDiv.appendChild(msgInfoDiv);
+
+  // Create a div for the message username
+  const msgInfoNameDiv = document.createElement('div');
+  msgInfoNameDiv.classList.add('msg-info-name');
+  msgInfoNameDiv.textContent = message.username;
+  msgInfoDiv.appendChild(msgInfoNameDiv);
+
+  // Create a div for the message timestamp
+  const msgInfoTimeDiv = document.createElement('div');
+  msgInfoTimeDiv.classList.add('msg-info-time');
+  // Format the timestamp
+  const timestampFormatted = formatTimestamp(message.timestamp);
+  msgInfoTimeDiv.textContent = timestampFormatted;
+  msgInfoDiv.appendChild(msgInfoTimeDiv);
+
+  // Create a div for the message text
+  const msgTextDiv = document.createElement('div');
+  msgTextDiv.classList.add('msg-text');
+  msgTextDiv.textContent = message.message;
+  msgBubbleDiv.appendChild(msgTextDiv);
+
+  // Append the message div to the .msger-chat container
+  const chatContainer = document.querySelector('.msger-chat');
+  chatContainer.appendChild(msgDiv);
+}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -629,6 +726,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
       </script>
-      
+     
+
+
+<script>
+  // const socket = io();
+  // Emit a request to the server to get the profile image URL
+
+</script>
 </body>
 </html>

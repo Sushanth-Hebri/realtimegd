@@ -651,8 +651,7 @@ app.get("/users", async (req, res) => {
 io.on("connection", (socket) => {
   console.log("New client connected");
 
-  socket.username = "Anonymous";
-  socket.profileImageUrl = ""; // Add this line to store profile image URL
+   // Add this line to store profile image URL
   connectedClients.add(socket);
   updateOnlineUsers();
 
