@@ -23,6 +23,13 @@
             flex: 1;
             display: flex;
         }
+        input[type="text"] {
+      width: 60%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 0px solid #ccc;
+      border-radius: 5px;
+    }
 
         .msger {
             flex: 1;
@@ -46,9 +53,11 @@
         .msger-chat {
             flex: 1;
             display: flex;
+            max-height: 80%;
             flex-direction: column;
             overflow-y: auto;
             padding: 10px;
+            background-color: #17d891;
         }
 
         .msg {
@@ -278,8 +287,11 @@
     .bottomtyper{
       position: fixed;
       bottom: 0;
-      height: 80px;
+      height: 70px;
+      display: flex;
+      justify-content: center;
       width: 78%;
+      align-items: center;
       background-color: #989595;
       padding: 10px;
       text-align: center;
@@ -441,6 +453,14 @@ socket.on('update online users', (onlineUsers) => {
 });
 
 
+function islideforyou(className) {
+  const element = document.querySelector(className);
+  if (element) {
+    element.scrollTop = element.scrollHeight;
+  } else {
+    console.error('Element not found with class:', className);
+  }
+}
 
 
 
@@ -448,6 +468,7 @@ socket.on('update online users', (onlineUsers) => {
   socket.on('newMessage', (newMessage) => {
     console.log('Received new message:', newMessage);
     iwillappend(newMessage)
+    islideforyou('.msger-chat');
     // Handle the new message as needed
   });
 
@@ -477,6 +498,7 @@ socket.on('update online users', (onlineUsers) => {
         sendMessageToServer(message, email, username2, actualprofileimageforonline);
         displayallmessages();
         messageInput.value = '';
+
       }
     }
   });
@@ -694,6 +716,8 @@ function iwillappend(message) {
   // Append the message div to the .msger-chat container
   const chatContainer = document.querySelector('.msger-chat');
   chatContainer.appendChild(msgDiv);
+
+  
 }
 
 
