@@ -240,33 +240,60 @@ app.post('/signup', upload.single('profileImage'), async (req, res) => {
 // Handle signin form submission
 app.post("/signin", async (req, res) => {
   try {
-      const { email, password } = req.body;
+      const { email, password,recaptchaToken } = req.body;
 
       // Validate form fields
       if (!email || !password) {
           return res.status(400).json({ error: "Email and password are required." });
       }
+
+// Verify reCAPTCHA token
+const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=6LeKhZcpAAAAACGnUiEhtlZ0_fgScsnSRWSohWzK&response=${recaptchaToken}`;
+
+try {
+  const response = await fetch(verifyUrl, { method: 'POST' });
+  const responseData = await response.json();
+
+  if (responseData.success) {
+      // reCAPTCHA token verification successful, proceed with signin logic
+      
+
 console.log(email,password);
-      // Find the user in the database
-      const user = await User.findOne({ email });
+// Find the user in the database
+const user = await User.findOne({ email });
 
-      // Check if the user exists
-      if (!user) {
-          return res.status(401).json({ error: "Invalid email or password" });
-      }
+// Check if the user exists
+if (!user) {
+    return res.status(401).json({ error: "Invalid email or password" });
+}
 
-      // Check if the password is correct
-      const passwordMatch = await bcrypt.compare(password, user.password);
-      if (!passwordMatch) {
-          return res.status(401).json({ error: "Invalid email or password" });
-      }
-      // Set the user's email in local storage
-      // Note: This is done on the client-side, and it's less secure than using sessions
-      res.cookie('email', email, { maxAge: 86400000 }); // Set maxAge to control the cookie's expiration time
+// Check if the password is correct
+const passwordMatch = await bcrypt.compare(password, user.password);
+if (!passwordMatch) {
+    return res.status(401).json({ error: "Invalid email or password" });
+}
+// Set the user's email in local storage
+// Note: This is done on the client-side, and it's less secure than using sessions
+res.cookie('email', email, { maxAge: 86400000 }); // Set maxAge to control the cookie's expiration time
 
-      console.log("User signed in. Email:", email);
+console.log("User signed in. Email:", email);
 
-      res.redirect("/joingroup");
+res.redirect("/joingroup");
+  } else {
+      // reCAPTCHA token verification failed, handle accordingly
+      res.status(500).json({ error: "Error during signin-bot" });
+
+  }
+} catch (error) {
+  // Error handling
+  console.error(error);
+  res.status(500).json({ error: "Error during signin" });
+}
+
+
+
+
+
   } catch (error) {
       console.error(error);
       res.status(500).json({ error: "Error during signin" });

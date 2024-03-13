@@ -116,7 +116,7 @@ a:hover {
 
     <label for="password">Password:</label>
     <input type="password" id="password" name="password" required>
-
+    <input type="hidden" id="recaptchaToken" name="recaptchaToken">
     <button type="submit">Login</button>
   </form>
   <p>Don't have an account? <a href="/signup">Signup</a></p>
@@ -139,47 +139,56 @@ a:hover {
     signinForm.addEventListener('submit', async function(event) {
         event.preventDefault();
 
-        // Get email and password values from form fields
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
+        grecaptcha.ready(function() {
+            grecaptcha.execute('6LeKhZcpAAAAACBb4_nQCCuFa_hPWSZWUr7X5scG', { action: 'signin' }).then(function(token) {
+                // Set the token value to the hidden field
+                document.getElementById('recaptchaToken').value = token;
 
-
- 
-
-// Store the email in localStorage
-localStorage.setItem("email", email);
-
-        // Create an object with email and password properties
-        const formData = { email, password };
-
-        console.log(formData.email);
-        console.log(formData.password);
-
-        const response = await fetch('/signin', {
-            method: 'POST',
-            body: JSON.stringify(formData),
-            headers: {
-                'Content-Type': 'application/json'
-            }
+                // Proceed with form submission
+                submitForm();
+            });
         });
 
-        if (response.ok) {
-            console.log('response ok ok');
-            window.location.href = '/joingroup';
-        } else {
-    // If error occurs, display the error message
-    const { error } = await response.json();
-    errorMsg.innerText = error;
-    errorMsg.style.display = 'block';
+        async function submitForm() {
+            // Get email and password values from form fields
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const recaptchaToken = document.getElementById('recaptchaToken').value;
+            localStorage.setItem("email", email);
 
-    // Set a timer to hide the error message after 3 seconds
-    setTimeout(() => {
-        errorMsg.style.display = 'none';
-    }, 3000); // 3000 milliseconds = 3 seconds
-}
+            // Create an object with email, password, and recaptchaToken properties
+            const formData = { email, password, recaptchaToken };
 
+            console.log(formData.email);
+            console.log(formData.password);
+            console.log(formData.recaptchaToken);
+
+            const response = await fetch('/signin', {
+                method: 'POST',
+                body: JSON.stringify(formData),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                console.log('response ok ok');
+                window.location.href = '/joingroup';
+            } else {
+                // If error occurs, display the error message
+                const { error } = await response.json();
+                errorMsg.innerText = error;
+                errorMsg.style.display = 'block';
+
+                // Set a timer to hide the error message after 3 seconds
+                setTimeout(() => {
+                    errorMsg.style.display = 'none';
+                }, 3000); // 3000 milliseconds = 3 seconds
+            }
+        }
     });
 });
+
 
 </script>
 <script src="https://www.google.com/recaptcha/api.js?render=6LeKhZcpAAAAACBb4_nQCCuFa_hPWSZWUr7X5scG"></script>
