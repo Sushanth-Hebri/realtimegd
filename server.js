@@ -240,40 +240,39 @@ app.post('/signup', upload.single('profileImage'), async (req, res) => {
 // Handle signin form submission
 app.post("/signin", async (req, res) => {
   try {
-    const { email, password } = req.body;
+      const { email, password } = req.body;
 
-    // Validate form fields
-    if (!email || !password) {
-      return res.status(400).send("Email and password are required.");
-    }
+      // Validate form fields
+      if (!email || !password) {
+          return res.status(400).json({ error: "Email and password are required." });
+      }
+console.log(email,password);
+      // Find the user in the database
+      const user = await User.findOne({ email });
 
-    // Find the user in the database
-    const user = await User.findOne({ email });
+      // Check if the user exists
+      if (!user) {
+          return res.status(401).json({ error: "Invalid email or password" });
+      }
 
-    // Check if the user exists
-    if (!user) {
-      return res.status(401).send("Invalid email or password");
-    }
+      // Check if the password is correct
+      const passwordMatch = await bcrypt.compare(password, user.password);
+      if (!passwordMatch) {
+          return res.status(401).json({ error: "Invalid email or password" });
+      }
+      // Set the user's email in local storage
+      // Note: This is done on the client-side, and it's less secure than using sessions
+      res.cookie('email', email, { maxAge: 86400000 }); // Set maxAge to control the cookie's expiration time
 
-    // Check if the password is correct
-    const passwordMatch = await bcrypt.compare(password, user.password);
-    if (!passwordMatch) {
-      return res.status(401).send("Invalid email or password");
-    }
+      console.log("User signed in. Email:", email);
 
-    // Set the user's email in local storage
-    // Note: This is done on the client-side, and it's less secure than using sessions
-    res.cookie('email', email, { maxAge: 86400000 }); // Set maxAge to control the cookie's expiration time
-
-    console.log("User signed in. Email:", email);
-
-    // Redirect to home.html after successful signin
-    res.redirect("/home.html");
+      res.redirect("/joingroup");
   } catch (error) {
-    console.error(error);
-    res.status(500).send("Error during signin");
+      console.error(error);
+      res.status(500).json({ error: "Error during signin" });
   }
 });
+
 
 const User = mongoose.model("User", userSchema);
 module.exports = User;
@@ -305,6 +304,14 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Define routes
 app.get("/", (req, res) => {
   res.sendFile("index.html", { root: "public" });
+});
+
+app.get("/webcamstream", (req, res) => {
+  res.sendFile("webcamstream.html", { root: "public" });
+});
+
+app.get("/profile", (req, res) => {
+  res.sendFile("profile.html", { root: "public" });
 });
 
 // Serve the admin.html page
@@ -347,6 +354,14 @@ app.get("/creategroup", (req, res) => {
 });
 
 app.get("/joingroup", (req, res) => {
+   // Retrieve email from cookies
+   const email = req.cookies.email;
+
+   // Check if email exists in cookies
+   if (!email) {
+       console.error('Email cookie not found');
+       res.redirect("/signin");
+   }
   res.sendFile("joingroup.html", { root: "public" });
 });
 
@@ -453,13 +468,17 @@ app.get("/userDetails", async (req, res) => {
 });
 
 app.get("/profile", (req, res) => {
-  // Retrieve the email from the session
-  const email = req.session.email;
+  
+ // Retrieve email from cookies
+ const email = req.cookies.email;
 
-  // If the email is not in the session, redirect to the sign-in page
-  if (!email) {
-    return res.redirect("/signin");
-  } else {
+ // Check if email exists in cookies
+ if (!email) {
+     console.error('Email cookie not found');
+     res.redirect("/signin");
+     // return res.status(400).send('Email cookie not found');
+ }
+ else {
     res.sendFile("profile.html", { root: "public" });
   }
 });
@@ -486,6 +505,12 @@ app.get("/api/user/email", (req, res) => {
 
 app.post("/joingroup", async (req, res) => {
   try {
+
+
+
+
+
+
     console.log('join group called');
     const groupId = req.body.groupId;
     const email = req.body.email;
@@ -509,7 +534,8 @@ app.post("/joingroup", async (req, res) => {
       const user = await User.findOne({ email });
 
       if (!user) {
-        console.log("User not found in MongoDB.");
+        res.redirect("/signin");       
+         console.log("User not found in MongoDB.");
         return res.status(404).send("User not found in MongoDB.");
       }
 
@@ -518,7 +544,7 @@ app.post("/joingroup", async (req, res) => {
   
 
       // Send a success response
-      res.status(200).send("User details stored in local storage.");
+      res.redirect("/chatexp");
     } else {
       console.log("Invalid request or missing required data.");
       res.status(400).send("Invalid request or missing required data.");
@@ -599,6 +625,37 @@ app.get("/profileImage", async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
+
+// Endpoint to show user profile
+app.get('/showmyprofile', async (req, res) => {
+  try {
+      // Retrieve email from cookies
+      const email = req.cookies.email;
+
+      // Check if email exists in cookies
+      if (!email) {
+          console.error('Email cookie not found');
+          res.redirect("/signin");
+          // return res.status(400).send('Email cookie not found');
+      }
+
+      // Find user by email
+      const user = await User.findOne({ email });
+
+      // Check if user exists
+      if (!user) {
+          console.error('User not found');
+          return res.status(404).send('User not found');
+      }
+
+      // Send user details as JSON response
+      res.json(user);
+  } catch (error) {
+      console.error('Error fetching user profile:', error);
+      res.status(500).send('Internal Server Error');
+  }
+});
+
 
 
 
@@ -722,6 +779,33 @@ socket.on('getProfileImage', async () => {
 
 
 
+// Function to capture webcam stream using getUserMedia API
+async function getWebcamStream() {
+  try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      console.log("streaming,,,");
+      return stream;
+  } catch (error) {
+      console.error('Error accessing webcam:', error);
+      return null;
+  }
+}
+
+
+
+
+let clients = {};
+// Handle signaling
+
+// Handle request for webcam stream
+socket.on('requestStream', () => {
+  // Simulated webcam stream (replace with actual webcam stream)
+  const stream = getWebcamStream(); // You need to define this function
+  socket.emit('stream', stream);
+});
+
+
+
 
 
   socket.on("disconnect", () => {
@@ -742,6 +826,19 @@ function updateOnlineUsers() {
 
 
 app.get("/chatexp", (req, res) => {
+
+ // Retrieve email from cookies
+ const email = req.cookies.email;
+
+ // Check if email exists in cookies
+ if (!email) {
+     console.error('Email cookie not found');
+     res.redirect("/signin");
+     // return res.status(400).send('Email cookie not found');
+ }
+else
+
+
   res.sendFile("chatexp.html", { root: "public" });
 });
 

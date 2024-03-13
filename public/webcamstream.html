@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webcam Streaming</title>
+</head>
+<body>
+    <h1>Remote Webcam Stream</h1>
+    <video id="remoteVideo" autoplay playsinline></video>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.1/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        // Function to display the remote webcam stream
+        function displayRemoteStream(stream) {
+            const remoteVideo = document.getElementById('remoteVideo');
+            remoteVideo.srcObject = stream;
+        }
+
+        // Request webcam stream from the server
+        socket.emit('requestStream');
+
+        // Receive webcam stream from the server
+        socket.on('stream', (stream) => {
+            displayRemoteStream(stream);
+        });
+    </script>
+</body>
+</html>

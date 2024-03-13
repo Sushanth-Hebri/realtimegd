@@ -5,7 +5,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login</title>
-  <link rel="stylesheet" href="styles.css">
   <style>
     
     body {
@@ -91,14 +90,25 @@ a:hover {
    color: white;
    font-size: 1.1rem;
 }
+.error-msg{
+  display: none;
+  height: auto;
+  width: 100%;
+  /* background-color: rgba(86, 85, 85, 0.497); */
+  border-radius: 12px;
+  font-size: 1.3rem;
+  color: red;
+  text-align: center;
+}
 
   </style>
 </head>
 <body>
   <div class="body-container">
   <div class="form-container">
+    <div class="error-msg"></div>
     <h1>Login</h1>
-  <form action="/signin" method="POST" id="signinForm">
+  <form method="post" id="signinForm">
    
 
     <label for="email">Email:</label>
@@ -121,20 +131,55 @@ a:hover {
 
 
 <script>
-    document.getElementById("signinForm").addEventListener("submit", function(event) {
-      // Prevent the default form submission
-      event.preventDefault();
+  document.addEventListener('DOMContentLoaded', function() {
+    const signinForm = document.getElementById('signinForm');
+    const errorMsg = document.querySelector('.error-msg');
 
-      // Get the email value from the form
-      var email = document.getElementById("email").value;
+    signinForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
 
-      // Store the email in localStorage
-      localStorage.setItem("email", email);
+        // Get email and password values from form fields
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
 
-      // Submit the form
-      this.submit();
-  });
-  
+
+ 
+
+// Store the email in localStorage
+localStorage.setItem("email", email);
+
+        // Create an object with email and password properties
+        const formData = { email, password };
+
+        console.log(formData.email);
+        console.log(formData.password);
+
+        const response = await fetch('/signin', {
+            method: 'POST',
+            body: JSON.stringify(formData),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            console.log('response ok ok');
+            window.location.href = '/joingroup';
+        } else {
+    // If error occurs, display the error message
+    const { error } = await response.json();
+    errorMsg.innerText = error;
+    errorMsg.style.display = 'block';
+
+    // Set a timer to hide the error message after 3 seconds
+    setTimeout(() => {
+        errorMsg.style.display = 'none';
+    }, 3000); // 3000 milliseconds = 3 seconds
+}
+
+    });
+});
+
 </script>
 
 </body>
