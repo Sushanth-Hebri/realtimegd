@@ -258,7 +258,7 @@ try {
       // reCAPTCHA token verification successful, proceed with signin logic
       
 
-console.log(email,password);
+console.log(email,password,responseData.success);
 // Find the user in the database
 const user = await User.findOne({ email });
 
@@ -280,6 +280,8 @@ console.log("User signed in. Email:", email);
 
 res.redirect("/joingroup");
   } else {
+    console.log(email,password,responseData.success);
+
       // reCAPTCHA token verification failed, handle accordingly
       res.status(500).json({ error: "Error during signin-bot" });
 
