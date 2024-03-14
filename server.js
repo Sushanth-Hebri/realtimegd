@@ -13,7 +13,6 @@ const qrcode = require("qrcode");
 require("dotenv").config();
 const cookieParser = require('cookie-parser');
 const cache = require('memory-cache');
-const sharp = require('sharp');
 const { v4: uuidv4 } = require('uuid');
 const cors = require('cors');
 const { Storage } = require('@google-cloud/storage');
