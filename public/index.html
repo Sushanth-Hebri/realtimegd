@@ -85,8 +85,30 @@
     </div>
 
     <div class="chat-demo">
-        <img src="assets/chat-demo.png" alt="">
+        <img data-src="assets/chat-demo.png" alt="">
     </div>
     <a href="/termsandprivacy" class="privacy-policy">Terms and Privacy</a>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+    var lazyImages = document.querySelectorAll("img[data-src]");
+    
+    function lazyLoad() {
+        lazyImages.forEach(function(img) {
+            if (img.getBoundingClientRect().top < window.innerHeight && img.getBoundingClientRect().bottom >= 0 && getComputedStyle(img).display !== "none") {
+                img.src = img.dataset.src;
+                img.removeAttribute("data-src");
+            }
+        });
+    }
+
+    window.addEventListener("scroll", lazyLoad);
+    window.addEventListener("resize", lazyLoad);
+    window.addEventListener("orientationchange", lazyLoad);
+
+    lazyLoad(); // Initial load
+});
+
+    </script>
 </body>
 </html>
