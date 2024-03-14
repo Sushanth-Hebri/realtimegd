@@ -4,10 +4,89 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Landing page</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap');
+        body{
+            background: url(assets/earth.jpeg);
+            background-size: cover;
+            color: white;
+            height: 100vh;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
+        .float-title{
+            font-size: 2rem;
+            color: white;
+            font-weight: 900;
+            line-height: 0.4;
+            text-align: center;
+            margin-right: 40px; /* Adjust as needed */
+            animation: float 3s infinite ease-in-out; /* Floating animation */
+            font-family: "Libre Baskerville", serif;
+            font-weight: 700;
+            font-style: normal;
+        }
+        .float-title p{
+            font-size: 1rem;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) translateX(5px);
+            }
+            50% {
+                transform: translateY(-10px) translateX(5px);
+            }
+        }
+        .start{
+            padding: 10px;
+            background-color: #0f44f1;
+            color: white;
+            border: 0;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        .start:hover{
+            background-color: #0638a4;
+        }
+        .chat-demo{
+            position: fixed;
+            left: 20px; /* Adjust padding */
+            bottom: 20px; /* Adjust padding */
+            padding: 10px; /* Adjust padding */
+        }
+        .chat-demo img{
+            height: auto;
+            width: 500px; /* Adjust width */
+            border-radius: 12px;
+            box-shadow: 2px 3px 3px 2px rgb(112, 107, 211);
+        }
+        .privacy-policy {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            color: white;
+            text-decoration: none;
+        }
+        .privacy-policy:hover {
+            text-decoration: underline;
+            list-style:upper-alpha;
+        }
+    </style>
 </head>
 <body>
-   hello hshs
-   nsd
-   sd 
+    <div class="float-title">
+        <h1>GROUP TALKS</h1>
+        <p>Connect, Collaborate, Communicate</p>
+        <button class="start" onclick="window.location.href='/signup'">Start Chatting Now</button>
+    </div>
+
+    <div class="chat-demo">
+        <img src="assets/chat-demo.png" alt="">
+    </div>
+    <a href="/termsandprivacy" class="privacy-policy">Terms and Privacy</a>
 </body>
 </html>

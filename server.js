@@ -339,6 +339,10 @@ app.get("/webcamstream", (req, res) => {
   res.sendFile("webcamstream.html", { root: "public" });
 });
 
+app.get("/termsandprivacy", (req, res) => {
+  res.sendFile("terms_privacy.html", { root: "public" });
+});
+
 app.get("/profile", (req, res) => {
   res.sendFile("profile.html", { root: "public" });
 });
