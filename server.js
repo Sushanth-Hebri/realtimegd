@@ -64,23 +64,7 @@ mongoose
   });
 
 const admin = require("firebase-admin");
-const serviceAccount = require("./public/assets/realtime-group-discussion-firebase-adminsdk-p748u-744df0c8ff.json");
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCPRBX23loTMM8zRtUI4_TiCZ6yhVTvkgc",
-  authDomain: "realtime-group-discussion.firebaseapp.com",
-  databaseURL: "https://realtime-group-discussion-default-rtdb.firebaseio.com",
-  projectId: "realtime-group-discussion",
-  storageBucket: "realtime-group-discussion.appspot.com", // Add the storage bucket URL
-  messagingSenderId: "297395929587",
-  appId: "1:297395929587:web:21beac58c3a94e46505286",
-};
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: 'https://realtime-group-discussion-default-rtdb.firebaseio.com',
-  storageBucket: firebaseConfig.storageBucket, // Use the storage bucket URL from firebaseConfig
-});
 
 const firestore = admin.firestore();
 const storageBucket = admin.storage().bucket();
@@ -88,23 +72,6 @@ const db = admin.database();
 
 console.log('Storage Bucket Name:');
 
-
-// const firebaseConfig = {
-//   apiKey: "AIzaSyCPRBX23loTMM8zRtUI4_TiCZ6yhVTvkgc",
-//   authDomain: "realtime-group-discussion.firebaseapp.com",
-//   databaseURL: "https://realtime-group-discussion-default-rtdb.firebaseio.com",
-//   projectId: "realtime-group-discussion",
-//   storageBucket: "realtime-group-discussion.appspot.com",
-//   messagingSenderId: "297395929587",
-//   appId: "1:297395929587:web:21beac58c3a94e46505286",
-// };
-
-// admin.initializeApp({
-//   credential: admin.credential.cert(serviceAccount),
-//   databaseURL: 'https://realtime-group-discussion-default-rtdb.firebaseio.com',
-// });
-
-// const db = admin.database();
 
 
 
