@@ -64,7 +64,7 @@ mongoose
   });
 
 const admin = require("firebase-admin");
-const serviceAccount = require('./etc/secrets/realtime-group-discussion-firebase-adminsdk-p748u-3f43d2b77f.json'); // Replace with the actual path
+const serviceAccount = require('/etc/secrets/realtime-group-discussion-firebase-adminsdk-p748u-3f43d2b77f.json'); // Replace with the actual path
 
 // Initialize Firebase Admin SDK
 admin.initializeApp({
