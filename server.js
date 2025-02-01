@@ -64,7 +64,17 @@ mongoose
   });
 
 const admin = require("firebase-admin");
+const serviceAccount = require('./etc/secrets/realtime-group-discussion-firebase-adminsdk-p748u-3f43d2b77f.json'); // Replace with the actual path
 
+// Initialize Firebase Admin SDK
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: process.env.FIREBASE_DATABASE_URL, // From .env file
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET, // From .env file
+});
+
+// Test initialization
+console.log('Firebase Admin SDK initialized successfully!');
 
 const firestore = admin.firestore();
 const storageBucket = admin.storage().bucket();
